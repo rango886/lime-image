@@ -34,30 +34,15 @@
 
 ## 页面展示
 ### 图片浏览
-<div align="center">
-  <img src="docs\launch.jpg" width="70%" />
-</div>
-
+![](docs\launch.jpg)
 ### 悬浮菜单栏
-<div align="center">
-  <img src="docs\titlebar.jpg" width="70%" />
-</div>
-
+![](docs\titlebar.jpg)
 ### 多语言支持
-<div align="center">
-  <img src="docs\language.jpg" width="70%" />
-</div>
-
+![](docs\language.jpg)
 ### 元数据编辑
-<div align="center">
-  <img src="docs\metadata.jpg" width="70%" />
-</div>
-
+![](docs\metadata.jpg)
 ### 方便的右键菜单
-<div align="center">
-  <img src="docs\menu.jpg" width="70%" />
-</div>
-
+![](docs\menu.jpg)
 # 捐赠
 ![](docs\about.jpg)
 
