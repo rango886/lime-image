@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>lime_image_viewer</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <Platforms>AnyCPU;x64</Platforms>
+    <!-- === 性能优化配置 START === -->
+    <!-- 启用 ReadyToRun：显著加快启动速度，因为大部分代码已预编译 -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- 复合 R2R：在减小体积和最大化速度之间平衡 -->
+    <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
+    <!-- 分层编译：让 JIT 在运行时进一步优化热点代码 -->
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- === 性能优化配置 END === -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q8-x64" Version="14.9.1" />
+  </ItemGroup>
+
+</Project>
