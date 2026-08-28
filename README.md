@@ -1,7 +1,7 @@
 <div align="center">
-  <a href="README.md">简体中文</a> |
+  <a href="README.zh-CN.md">简体中文</a> |
   <a href="README.zh-TW.md">繁體中文</a> |
-  <a href="README.en.md">English</a> |
+  <a href="README.md">English</a> |
   <a href="README.ja.md">日本語</a> |
   <a href="README.ko.md">한국어</a> |
   <a href="README.fr.md">Français</a>
@@ -57,6 +57,7 @@ To enhance browsing efficiency, Lime Image Viewer provides extensive keyboard sh
 | | `L` | Open current file location in Explorer |
 | | `I` | Show / Hide Metadata Panel |
 | **Scaling** | `1` - `5` | Switch Scaling Modes (Auto/Focus/Center/Width/Height) |
+| | `Ctrl + Wheel` | Zoom the image manually |
 | **Sorting** | `N` / `Shift + N` | Sort by **Name** Asc / Desc |
 | | `T` / `Shift + T` | Sort by **Time** Asc / Desc |
 | | `S` / `Shift + S` | Sort by **Size** Asc / Desc |
