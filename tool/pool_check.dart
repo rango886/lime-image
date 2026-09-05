@@ -8,8 +8,10 @@ import 'package:limeimage/services/decoders/format_sniffer.dart';
 Future<void> main(List<String> args) async {
   final reg = DecoderRegistry(useIsolates: true, isolateCount: 2);
   await reg.initialize();
-  stdout.writeln('workers=${reg.isolateCount} wic=${reg.wicAvailable} '
-      'ffmpeg=${reg.ffmpegAvailable}');
+  stdout.writeln(
+    'workers=${reg.isolateCount} wic=${reg.wicAvailable} '
+    'ffmpeg=${reg.ffmpegAvailable}',
+  );
 
   for (final path in args) {
     final sniff = await FormatSniffer.sniffFile(path);
@@ -35,8 +37,10 @@ Future<void> main(List<String> args) async {
   }
   stdout.writeln('mainIsolateDecodes=${reg.mainIsolateDecodes}');
   for (final e in reg.stats.entries) {
-    stdout.writeln('stat ${e.key}: ok=${e.value.success} '
-        'fail=${e.value.failure} avg=${e.value.avgMs}ms');
+    stdout.writeln(
+      'stat ${e.key}: ok=${e.value.success} '
+      'fail=${e.value.failure} avg=${e.value.avgMs}ms',
+    );
   }
   reg.dispose();
 }

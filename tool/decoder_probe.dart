@@ -27,8 +27,10 @@ Future<void> main(List<String> args) async {
   print('\n=== 本机 WIC 解码器（COM 枚举，注册表看不全）===');
   for (final c in reg.wicCodecs) {
     final e = c.extensions.toList()..sort();
-    print('  ${c.friendlyName.padRight(32)} '
-        '${e.take(12).join(' ')}${e.length > 12 ? ' …(${e.length})' : ''}');
+    print(
+      '  ${c.friendlyName.padRight(32)} '
+      '${e.take(12).join(' ')}${e.length > 12 ? ' …(${e.length})' : ''}',
+    );
   }
 
   final targets = <String>[];
@@ -49,8 +51,10 @@ Future<void> main(List<String> args) async {
   if (targets.isNotEmpty) {
     targets.sort();
     print('\n=== 解码矩阵 (targetWidth=$target) ===');
-    print('${'FILE'.padRight(26)}${'SNIFF'.padRight(21)}'
-        '${'DECODER'.padRight(18)}${'RESULT'.padRight(23)}TIME');
+    print(
+      '${'FILE'.padRight(26)}${'SNIFF'.padRight(21)}'
+      '${'DECODER'.padRight(18)}${'RESULT'.padRight(23)}TIME',
+    );
     print('-' * 104);
 
     for (final path in targets) {
@@ -58,8 +62,10 @@ Future<void> main(List<String> args) async {
       final sniff = await FormatSniffer.sniffFile(path);
 
       if (sniff.format.skiaNative) {
-        print('${_cut(name, 25).padRight(26)}${_cut('$sniff', 20).padRight(21)}'
-            '${'(skia)'.padRight(18)}Flutter 内置路径');
+        print(
+          '${_cut(name, 25).padRight(26)}${_cut('$sniff', 20).padRight(21)}'
+          '${'(skia)'.padRight(18)}Flutter 内置路径',
+        );
         continue;
       }
 
@@ -70,15 +76,19 @@ Future<void> main(List<String> args) async {
         final what = r.isEncoded
             ? 'encoded ${r.encoded!.length}B ${r.width}x${r.height}'
             : '${r.width}x${r.height} ${r.format.name}';
-        print('${_cut(name, 25).padRight(26)}${_cut('$sniff', 20).padRight(21)}'
-            '${r.decoderId.padRight(18)}${_cut(what, 22).padRight(23)}'
-            '${(sw.elapsedMicroseconds / 1000).toStringAsFixed(1)}ms'
-            '${r.previewOnly ? '  [preview]' : ''}'
-            '${r.orientation != 1 ? '  [orient=${r.orientation}]' : ''}');
+        print(
+          '${_cut(name, 25).padRight(26)}${_cut('$sniff', 20).padRight(21)}'
+          '${r.decoderId.padRight(18)}${_cut(what, 22).padRight(23)}'
+          '${(sw.elapsedMicroseconds / 1000).toStringAsFixed(1)}ms'
+          '${r.previewOnly ? '  [preview]' : ''}'
+          '${r.orientation != 1 ? '  [orient=${r.orientation}]' : ''}',
+        );
       } catch (e) {
         sw.stop();
-        print('${_cut(name, 25).padRight(26)}${_cut('$sniff', 20).padRight(21)}'
-            '${'-'.padRight(18)}${_cut(e.toString(), 45)}');
+        print(
+          '${_cut(name, 25).padRight(26)}${_cut('$sniff', 20).padRight(21)}'
+          '${'-'.padRight(18)}${_cut(e.toString(), 45)}',
+        );
       }
     }
   }
@@ -92,8 +102,10 @@ Future<void> main(List<String> args) async {
       FormatSupport.failed => '失败',
       FormatSupport.none => '不支持',
     };
-    print('  ${s.format.label.padRight(14)}${mark.padRight(10)}'
-        '${s.decoders.join(', ')}');
+    print(
+      '  ${s.format.label.padRight(14)}${mark.padRight(10)}'
+      '${s.decoders.join(', ')}',
+    );
   }
 
   reg.dispose();

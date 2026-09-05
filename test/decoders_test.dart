@@ -13,7 +13,8 @@ void main() {
   group('FormatSniffer 魔术字节', () {
     test('常见格式', () {
       expect(
-        FormatSniffer.sniff(_b([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A], pad: 32)).format,
+        FormatSniffer.sniff(_b([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A], pad: 32))
+            .format,
         ImageFormat.png,
       );
       expect(
@@ -25,9 +26,7 @@ void main() {
         ImageFormat.psd,
       );
       expect(
-        FormatSniffer.sniff(
-          _b([0x76, 0x2F, 0x31, 0x01], pad: 32),
-        ).format,
+        FormatSniffer.sniff(_b([0x76, 0x2F, 0x31, 0x01], pad: 32)).format,
         ImageFormat.exr,
       );
     });
@@ -43,8 +42,18 @@ void main() {
       // ISOBMFF 封装
       final boxed = FormatSniffer.sniff(
         _b([
-          0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20,
-          0x0D, 0x0A, 0x87, 0x0A,
+          0x00,
+          0x00,
+          0x00,
+          0x0C,
+          0x4A,
+          0x58,
+          0x4C,
+          0x20,
+          0x0D,
+          0x0A,
+          0x87,
+          0x0A,
         ], pad: 32),
       );
       expect(boxed.format, ImageFormat.jxl);
