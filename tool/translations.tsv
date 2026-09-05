@@ -1,0 +1,341 @@
+查看方式|View mode|表示モード|보기 모드
+缩放|Zoom|ズーム|확대/축소
+图像|Image|画像|이미지
+排序|Sort|並べ替え|정렬
+浏览|Browse|閲覧|탐색
+动图|Animation|アニメーション|애니메이션
+文件操作|File operations|ファイル操作|파일 작업
+界面|Interface|インターフェース|인터페이스
+窗口|Window|ウィンドウ|창
+{0} 张图片|{0} images|画像 {0} 枚|이미지 {0}개
+快捷键|Keyboard shortcuts|ショートカット|단축키
+关闭|Close|閉じる|닫기
+窗口与启动|Window & startup|ウィンドウと起動|창 및 시작
+外观|Appearance|外観|모양
+查看|Viewing|表示|보기
+拼页与滚动|Layout & scrolling|ページ配置とスクロール|배치 및 스크롤
+动画与过渡|Animation & transitions|アニメと切り替え|애니메이션 및 전환
+鼠标|Mouse|マウス|마우스
+性能|Performance|パフォーマンス|성능
+文件|Files|ファイル|파일
+解码器|Decoders|デコーダー|디코더
+关于|About|このアプリについて|정보
+设置|Settings|設定|설정
+改动会自动同步到看图窗口|Changes sync automatically to the viewer|変更はビューアーに自動で同期されます|변경 사항이 뷰어에 자동으로 동기화됩니다
+关闭 (Esc)|Close (Esc)|閉じる (Esc)|닫기 (Esc)
+最小化|Minimize|最小化|최소화
+最大化 / 还原|Maximize / Restore|最大化 / 元に戻す|최대화 / 복원
+关闭窗口 (Esc)|Close window (Esc)|ウィンドウを閉じる (Esc)|창 닫기 (Esc)
+启动位置|Startup position|起動時の位置|시작 위치
+窗口启动方式|Window placement|起動時の配置|시작 시 창 배치
+默认宽度|Default width|既定の幅|기본 너비
+默认高度|Default height|既定の高さ|기본 높이
+启动时全屏|Start in fullscreen|全画面で起動|전체 화면으로 시작
+窗口置顶|Always on top|最前面に表示|항상 위에 표시
+多开行为|Multiple instances|複数起動|다중 실행
+从文件管理器打开图片时|When opening from a file manager|ファイル管理ソフトから開くとき|파일 관리자에서 열 때
+复用已有窗口时直接切换图片；新窗口模式会为每次打开启动独立进程。|Reuse switches the image in the existing window; new-window mode starts a separate process each time.|既存ウィンドウでは画像を切り替えます。新規ウィンドウでは毎回別のプロセスを起動します。|기존 창 재사용 시 이미지를 전환하며, 새 창 모드에서는 매번 별도 프로세스를 시작합니다.
+恢复上次|Restore session|前回の状態を復元|이전 세션 복원
+记住上次打开的文件夹|Remember last folder|最後のフォルダーを記憶|마지막 폴더 기억
+启动时恢复上次的图片|Restore last image on startup|起動時に最後の画像を復元|시작 시 마지막 이미지 복원
+主题|Theme|テーマ|테마
+主题模式|Theme mode|テーマモード|테마 모드
+画布背景|Canvas background|キャンバスの背景|캔버스 배경
+界面圆角|Corner radius|角の丸み|모서리 둥글기
+字体大小|Font size|文字サイズ|글꼴 크기
+标题栏|Title bar|タイトルバー|제목 표시줄
+自动隐藏标题栏（靠近顶部显示）|Auto-hide title bar (show near top)|タイトルバーを自動で隠す（上端で表示）|제목 표시줄 자동 숨김 (상단에서 표시)
+标题栏高度|Title bar height|タイトルバーの高さ|제목 표시줄 높이
+离开后多久隐藏|Hide delay after leaving|離れてから隠すまでの時間|벗어난 후 숨김 지연
+状态悬浮窗|Status overlay|ステータスパネル|상태 패널
+显示状态悬浮窗|Show status overlay|ステータスパネルを表示|상태 패널 표시
+悬浮窗位置|Overlay position|パネルの位置|패널 위치
+悬浮窗不透明度|Overlay opacity|パネルの不透明度|패널 불투명도
+其他界面|Other UI options|その他の表示|기타 인터페이스
+显示缩略图栏|Show filmstrip|サムネイルバーを表示|썸네일 막대 표시
+缩略图栏高度|Filmstrip height|サムネイルバーの高さ|썸네일 막대 높이
+网格缩略图大小|Grid thumbnail size|一覧のサムネイルサイズ|격자 썸네일 크기
+显示中部浮层提示 (HUD)|Show on-screen messages (HUD)|画面上の通知を表示 (HUD)|화면 알림 표시 (HUD)
+提示显示时长|Message duration|通知の表示時間|알림 표시 시간
+全屏时自动隐藏鼠标|Auto-hide cursor in fullscreen|全画面でカーソルを自動で隠す|전체 화면에서 커서 자동 숨김
+右键菜单显示图标|Show context menu icons|右クリックメニューにアイコンを表示|컨텍스트 메뉴 아이콘 표시
+默认查看方式|Default view mode|既定の表示モード|기본 보기 모드
+打开图片时使用|When opening an image|画像を開くとき|이미지를 열 때
+记住最后使用的查看方式|Remember last view mode|最後の表示モードを記憶|마지막 보기 모드 기억
+缩放插值|Zoom interpolation|補間方式|확대/축소 보간
+每次缩放倍率|Zoom step factor|ズーム倍率の刻み|확대/축소 단계 배율
+最小缩放|Minimum zoom|最小倍率|최소 배율
+最大缩放|Maximum zoom|最大倍率|최대 배율
+放大小于窗口的图片|Upscale small images|小さい画像を拡大|작은 이미지 확대
+图片小于窗口时居中|Center small images|小さい画像を中央に表示|작은 이미지 가운데 표시
+平移|Panning|パン|이동
+拖动惯性|Drag inertia|ドラッグの慣性|드래그 관성
+键盘平移步长|Keyboard pan step|キー操作の移動量|키보드 이동 간격
+双击动作|Double-click action|ダブルクリック時の動作|두 번 클릭 동작
+到头后循环到另一端|Wrap around at the ends|端に達したら反対側に戻る|끝에 도달하면 반대쪽으로 순환
+应用 EXIF 方向（手机照片自动转正）|Apply EXIF orientation (auto-rotate photos)|EXIF の向きを適用（写真を自動回転）|EXIF 방향 적용 (사진 자동 회전)
+双页模式|Two-page mode|見開きモード|두 페이지 모드
+阅读方向|Reading direction|読む方向|읽기 방향
+首页单独显示（封面）|Show first page alone (cover)|最初のページを単独表示（表紙）|첫 페이지 단독 표시 (표지)
+双页间距|Page gap|見開きの間隔|페이지 간격
+漫画 / 长图模式|Comic / long image mode|漫画 / 縦長画像モード|만화 / 긴 이미지 모드
+图片间距|Image gap|画像の間隔|이미지 간격
+滚轮滚动步长|Mouse wheel scroll step|ホイールのスクロール量|휠 스크롤 간격
+平滑滚动（键盘 / 菜单）|Smooth scrolling (keyboard / menu)|スムーズスクロール（キー / メニュー）|부드러운 스크롤 (키보드 / 메뉴)
+鼠标滚轮平滑滚动|Smooth mouse wheel scrolling|ホイールのスムーズスクロール|부드러운 마우스 휠 스크롤
+滚轮平滑时长|Wheel smoothing duration|ホイールのアニメーション時間|휠 스크롤 애니메이션 시간
+预加载屏数|Screens to preload|先読みする画面数|미리 불러올 화면 수
+切换图片过渡动画|Image transitions|画像切り替え効果|이미지 전환 효과
+动画类型|Transition type|効果の種類|전환 유형
+动画时长|Animation duration|アニメーション時間|애니메이션 시간
+动图 (GIF / APNG / 动画 WebP)|Animated images (GIF / APNG / WebP)|アニメ画像 (GIF / APNG / WebP)|움직이는 이미지 (GIF / APNG / WebP)
+打开后自动播放|Autoplay on opening|開いたら自動再生|열 때 자동 재생
+播放速度|Playback speed|再生速度|재생 속도
+最多缓存帧数|Maximum cached frames|キャッシュする最大フレーム数|최대 캐시 프레임 수
+鼠标与滚轮（每种查看方式独立设置）|Mouse & wheel (per view mode)|マウスとホイール（表示モード別）|마우스 및 휠 (보기 모드별 설정)
+滚轮|Mouse wheel|ホイール|마우스 휠
+Ctrl + 滚轮|Ctrl + Wheel|Ctrl + ホイール|Ctrl + 휠
+Shift + 滚轮|Shift + Wheel|Shift + ホイール|Shift + 휠
+Alt + 滚轮|Alt + Wheel|Alt + ホイール|Alt + 휠
+拖动图片使用|Drag image with|画像のドラッグに使用|이미지 드래그 버튼
+反转滚轮方向|Invert wheel direction|ホイール方向を反転|휠 방향 반전
+作用范围|Scope|適用範囲|적용 범위
+全局（所有查看方式）|Global (all view modes)|全体（すべての表示モード）|전역 (모든 보기 모드)
+全部恢复默认|Reset all to defaults|すべて既定に戻す|모두 기본값으로 복원
+在此查看方式下覆盖全局设置；未覆盖的项显示为组继承值。|Override global shortcuts for this mode. Unchanged entries inherit global bindings.|このモードの全体設定を上書きします。未変更の項目は全体設定を継承します。|이 모드의 전역 단축키를 재정의합니다. 변경하지 않은 항목은 전역 설정을 상속합니다.
+未设置|Not set|未設定|설정 안 됨
+添加按键|Add shortcut|キーを追加|단축키 추가
+恢复默认|Reset to default|既定に戻す|기본값 복원
+取消覆盖|Remove override|上書きを解除|재정의 해제
+快捷键冲突|Shortcut conflict|ショートカットの競合|단축키 충돌
+{0} 已被「{1}」占用，是否抢占？|{0} is assigned to “{1}”. Reassign it?|{0} は「{1}」に割り当て済みです。変更しますか？|{0}은(는) “{1}”에 할당되어 있습니다. 다시 할당할까요?
+取消|Cancel|キャンセル|취소
+抢占|Reassign|再割り当て|다시 할당
+缓存与预取|Cache & prefetch|キャッシュと先読み|캐시 및 미리 가져오기
+图片缓存上限|Image cache limit|画像キャッシュ上限|이미지 캐시 한도
+预取前后张数|Images to prefetch on each side|前後に先読みする枚数|앞뒤로 미리 가져올 이미지 수
+解码|Decoding|デコード|디코딩
+单张最大解码边长|Maximum decode dimension|最大デコード辺長|최대 디코딩 변 길이
+放大时渐进加载更高清版本|Progressively load higher quality on zoom|拡大時に高画質版を段階的に読み込む|확대 시 고화질 버전을 점진적으로 로드
+停止交互后提升画质延迟|Quality upgrade delay after interaction|操作後の画質向上までの遅延|조작 후 화질 향상 지연
+当前缓存：{0} 项 / {1} MB\n超大图（>16k 像素）受 GPU 纹理上限限制会自动降采样。|Cache: {0} items / {1} MB\nVery large images (>16k pixels) are downsampled to fit GPU texture limits.|キャッシュ：{0} 件 / {1} MB\n巨大な画像（16k ピクセル超）は GPU の制限に合わせて縮小されます。|캐시: {0}개 / {1} MB\n초대형 이미지 (>16k 픽셀)는 GPU 텍스처 한도에 맞게 축소됩니다.
+清空缓存|Clear cache|キャッシュを消去|캐시 비우기
+默认排序字段|Default sort field|既定の並べ替え項目|기본 정렬 기준
+正序|Ascending|昇順|오름차순
+自然排序（img2 在 img10 之前）|Natural sort (img2 before img10)|自然順（img2 を img10 より前に）|자연 정렬 (img2가 img10보다 먼저)
+显示隐藏文件|Show hidden files|隠しファイルを表示|숨김 파일 표시
+只列出本机能解码的文件|Only list locally decodable files|この PC でデコード可能なファイルのみ表示|이 기기에서 디코딩 가능한 파일만 표시
+默认关：认得出是图片就列出来，不会因为解不了而让浏览断档|Off by default: list all recognized images, even without a decoder.|既定ではオフ：デコードできなくても、認識した画像をすべて表示します。|기본값은 꺼짐: 디코더 유무와 관계없이 인식된 모든 이미지를 표시합니다.
+删除到回收站|Delete to trash|ゴミ箱に移動|휴지통으로 삭제
+删除前确认|Confirm before deleting|削除前に確認|삭제 전 확인
+监听文件夹变化自动刷新|Refresh when folder changes|フォルダーの変更時に自動更新|폴더 변경 시 자동 새로 고침
+支持打开压缩包 (zip / cbz)|Open archives (zip / cbz)|圧縮ファイルを開く (zip / cbz)|압축 파일 열기 (zip / cbz)
+幻灯片|Slideshow|スライドショー|슬라이드 쇼
+间隔|Interval|間隔|간격
+随机顺序|Random order|ランダム順|무작위 순서
+循环播放|Loop playback|繰り返し再生|반복 재생
+lime image 是一款面向桌面的轻量图片查看器，支持常见图片、动图、矢量图、相机 RAW 和漫画浏览。|lime image is a lightweight desktop viewer for images, animations, vectors, camera RAW files and comics.|lime image は一般画像、アニメ画像、ベクター画像、カメラ RAW、漫画に対応した軽量デスクトップビューアーです。|lime image는 일반 이미지, 애니메이션, 벡터, 카메라 RAW 및 만화를 지원하는 가벼운 데스크톱 뷰어입니다.
+版本 {0}|Version {0}|バージョン {0}|버전 {0}
+配置文件|Configuration file|設定ファイル|설정 파일
+在文件管理器中显示|Show in file manager|ファイル管理ソフトで表示|파일 관리자에서 표시
+恢复默认设置|Reset settings|設定を初期化|설정 초기화
+后端与格式|Backends & formats|バックエンドと形式|백엔드 및 형식
+系统图像组件 (WIC)|Windows Imaging Component (WIC)|Windows 画像コンポーネント (WIC)|Windows 이미징 구성 요소 (WIC)
+内嵌预览|Embedded preview|埋め込みプレビュー|내장 미리 보기
+矢量渲染|Vector rendering|ベクター描画|벡터 렌더링
+重新检测后端|Detect backends again|バックエンドを再検出|백엔드 다시 검색
+后台解码|Background decoding|バックグラウンドデコード|백그라운드 디코딩
+使用 worker isolate|Use worker isolates|worker isolate を使用|worker isolate 사용
+避免大图解码阻塞界面|Keep the UI responsive while decoding large images|大きい画像のデコード中も UI の応答を維持|큰 이미지 디코딩 중 UI 멈춤 방지
+worker 数量|Worker count|worker 数|worker 수
+自动分配 · 当前 {0} 个 worker|Automatic · {0} workers active|自動割り当て · 現在 {0} worker|자동 할당 · 현재 worker {0}개
+当前 {0} 个 worker|{0} workers active|現在 {0} worker|현재 worker {0}개
+可执行文件路径；留空时从 PATH 查找，按回车应用|Executable path; leave blank to search PATH. Press Enter to apply.|実行ファイルのパス。空欄なら PATH を検索。Enter で適用。|실행 파일 경로. 비우면 PATH에서 검색합니다. Enter로 적용.
+文件列表|File list|ファイル一覧|파일 목록
+关闭时会列出所有已知图片格式|When off, all known image formats are listed|オフの場合は既知の画像形式をすべて表示|끄면 알려진 모든 이미지 형식 표시
+内置|Built-in|内蔵|기본 제공
+已验证|Verified|検証済み|검증됨
+待验证|Unverified|未検証|검증 대기
+失败|Failed|失敗|실패
+不可用|Unavailable|使用不可|사용 불가
+强调色|Accent color|アクセントカラー|강조 색상
+自定义颜色|Custom color|カスタムカラー|사용자 지정 색상
+自定义强调色|Custom accent color|アクセントカラーを指定|사용자 지정 강조 색상
+应用|Apply|適用|적용
+按下新的快捷键|Press a new shortcut|新しいショートカットを押してください|새 단축키를 누르세요
+等待按键…|Waiting for input…|キー入力を待機中…|키 입력 대기 중…
+确定|OK|OK|확인
+退出全屏 (Esc)|Exit fullscreen (Esc)|全画面を終了 (Esc)|전체 화면 종료 (Esc)
+隐藏状态窗|Hide status overlay|ステータスパネルを隠す|상태 패널 숨기기
+尺寸|Dimensions|寸法|크기
+原始|Original|元の画像|원본
+宽度 {0}%|Width {0}%|幅 {0}%|너비 {0}%
+大小|Size|サイズ|용량
+修改|Modified|更新日時|수정됨
+播放中|Playing|再生中|재생 중
+已暂停|Paused|一時停止中|일시 정지됨
+第 {0} / {1}{2} 帧|Frame {0} / {1}{2}|フレーム {0} / {1}{2}|프레임 {0} / {1}{2}
+缓存|Cache|キャッシュ|캐시
+方向|Orientation|向き|방향
+读取中…|Loading…|読み込み中…|읽는 중…
+无 EXIF 数据|No EXIF data|EXIF データなし|EXIF 데이터 없음
+收起 EXIF|Collapse EXIF|EXIF を折りたたむ|EXIF 접기
+展开 EXIF|Expand EXIF|EXIF を展開|EXIF 펼치기
+图片|Images|画像|이미지
+删除文件|Delete file|ファイルを削除|파일 삭제
+把「{0}」移到回收站？|Move “{0}” to the trash?|「{0}」をゴミ箱に移動しますか？|“{0}”을(를) 휴지통으로 이동할까요?
+永久删除「{0}」？此操作不可撤销。|Permanently delete “{0}”? This cannot be undone.|「{0}」を完全に削除しますか？元に戻せません。|“{0}”을(를) 영구 삭제할까요? 되돌릴 수 없습니다.
+删除|Delete|削除|삭제
+重命名|Rename|名前を変更|이름 바꾸기
+松手打开图片|Drop to open images|ドロップして画像を開く|놓아서 이미지 열기
+这个格式本机没有可用解码器\n{0}|No decoder available for this format\n{0}|この形式に対応するデコーダーがありません\n{0}|이 형식에 사용 가능한 디코더가 없습니다\n{0}
+无法打开这张图片\n{0}|Unable to open this image\n{0}|この画像を開けません\n{0}|이미지를 열 수 없습니다\n{0}
+播放|Play|再生|재생
+暂停|Pause|一時停止|일시 정지
+幻灯片已停止|Slideshow stopped|スライドショーを停止しました|슬라이드 쇼 중지됨
+幻灯片放映中 {0}s|Slideshow playing · {0}s|スライドショー再生中 · {0}秒|슬라이드 쇼 재생 중 · {0}초
+删除失败: {0}|Delete failed: {0}|削除に失敗しました: {0}|삭제 실패: {0}
+已删除 {0}|Deleted {0}|{0} を削除しました|{0} 삭제됨
+已重命名|Renamed|名前を変更しました|이름 변경됨
+重命名失败: {0}|Rename failed: {0}|名前の変更に失敗しました: {0}|이름 변경 실패: {0}
+没有标记的文件|No marked files|マークしたファイルはありません|표시한 파일 없음
+{0} {1} 个文件|{0} {1} files|{0}: {1} ファイル|{0}: 파일 {1}개
+取消置顶|Disable always on top|最前面表示を解除|항상 위에 표시 해제
+窗口适应图片|Fit window to image|ウィンドウを画像に合わせる|창을 이미지에 맞추기
+适应窗口|Fit to window|ウィンドウに合わせる|창에 맞추기
+已标记|Marked|マークしました|표시됨
+取消标记|Unmark|マークを解除|표시 해제
+显示全部|Show all|すべて表示|모두 표시
+还没有标记任何文件|No files marked yet|まだファイルをマークしていません|아직 표시한 파일이 없습니다
+只看标记项（{0}）|Marked only ({0})|マークのみ表示（{0}）|표시한 항목만 ({0})
+已复制图片|Image copied|画像をコピーしました|이미지 복사됨
+复制失败（缺少系统工具？）|Copy failed (missing system tools?)|コピーに失敗（システムツールが不足？）|복사 실패 (시스템 도구가 없나요?)
+已复制路径|Path copied|パスをコピーしました|경로 복사됨
+剪贴板里没有可打开的文件|No files to open in the clipboard|クリップボードに開けるファイルがありません|클립보드에 열 수 있는 파일이 없습니다
+旋转 {0}°|Rotate {0}°|{0}° 回転|{0}° 회전
+水平翻转|Flip horizontally|左右反転|좌우 뒤집기
+垂直翻转|Flip vertically|上下反転|상하 뒤집기
+已重置|Reset|リセットしました|초기화됨
+速度 {0}x|Speed {0}x|速度 {0}x|속도 {0}x
+ViewerScope 未找到|ViewerScope not found|ViewerScope が見つかりません|ViewerScope를 찾을 수 없음
+自动缩放|Auto fit|自動フィット|자동 맞춤
+焦点缩放锁定|Focus zoom lock|焦点ズーム固定|초점 배율 고정
+宽度优先|Fit width|幅に合わせる|너비에 맞추기
+高度优先|Fit height|高さに合わせる|높이에 맞추기
+中心缩放锁定|Center zoom lock|中央ズーム固定|중앙 배율 고정
+漫画模式|Comic mode|漫画モード|만화 모드
+长图模式|Long image mode|縦長画像モード|긴 이미지 모드
+名称|Name|名前|이름
+修改时间|Modification time|更新日時|수정 시간
+无 EXIF / XMP 数据|No EXIF / XMP data|EXIF / XMP データなし|EXIF / XMP 데이터 없음
+没有匹配字段|No matching fields|一致する項目なし|일치하는 필드 없음
+显示技术字段|Show technical fields|技術情報を表示|기술 필드 표시
+复制全部|Copy all|すべてコピー|모두 복사
+搜索字段或内容|Search fields or values|項目や内容を検索|필드 또는 내용 검색
+复制|Copy|コピー|복사
+收起|Collapse|折りたたむ|접기
+展开全文|Show full text|全文を表示|전체 텍스트 표시
+收起元数据|Collapse metadata|メタデータを折りたたむ|메타데이터 접기
+展开元数据|Expand metadata|メタデータを展開|메타데이터 펼치기
+无可显示的元数据|No metadata to display|表示できるメタデータはありません|표시할 메타데이터 없음
+PNG 文本|PNG text|PNG テキスト|PNG 텍스트
+类型|Type|種類|유형
+随机|Random|ランダム|무작위
+无|None|なし|없음
+切换图片|Switch image|画像を切り替え|이미지 전환
+切换单页|Switch single page|1 ページずつ切り替え|한 페이지씩 전환
+垂直滚动|Scroll vertically|縦スクロール|세로 스크롤
+水平滚动|Scroll horizontally|横スクロール|가로 스크롤
+左键|Left button|左ボタン|왼쪽 버튼
+中键|Middle button|中央ボタン|가운데 버튼
+右键|Right button|右ボタン|오른쪽 버튼
+淡入淡出|Fade|フェード|페이드
+水平滑动|Horizontal slide|横スライド|가로 슬라이드
+缩放淡入|Scale & fade|ズームフェード|확대 페이드
+垂直滑动|Vertical slide|縦スライド|세로 슬라이드
+跟随主题|Follow theme|テーマに合わせる|테마 따르기
+纯黑|Black|黒|검정
+深灰|Dark gray|濃いグレー|진한 회색
+浅灰|Light gray|薄いグレー|연한 회색
+纯白|White|白|흰색
+棋盘格|Checkerboard|市松模様|체커보드
+跟随系统|System|システムに合わせる|시스템 따르기
+亮色|Light|ライト|밝게
+暗色|Dark|ダーク|어둡게
+复用已有窗口|Reuse existing window|既存ウィンドウを使用|기존 창 재사용
+每次打开新窗口|Always open a new window|毎回新しいウィンドウで開く|항상 새 창에서 열기
+自动（交互中降质）|Auto (lower quality while interacting)|自動（操作中は画質を下げる）|자동 (조작 중 화질 낮춤)
+最近邻（像素画）|Nearest neighbor (pixel art)|最近傍（ピクセルアート）|최근접 이웃 (픽셀 아트)
+低|Low|低|낮음
+中|Medium|中|중간
+高|High|高|높음
+居中并使用默认尺寸|Center with default size|既定サイズで中央に表示|기본 크기로 가운데 표시
+记住上次位置和大小|Remember position and size|前回の位置とサイズを記憶|이전 위치 및 크기 기억
+切换全屏|Toggle fullscreen|全画面を切り替え|전체 화면 전환
+原始大小 / 适应窗口|Original size / Fit to window|原寸 / ウィンドウに合わせる|원본 크기 / 창에 맞추기
+最大化|Maximize|最大化|최대화
+下一张|Next image|次の画像|다음 이미지
+从左到右|Left to right|左から右|왼쪽에서 오른쪽
+从右到左（日漫）|Right to left (manga)|右から左（日本の漫画）|오른쪽에서 왼쪽 (일본 만화)
+左上|Top left|左上|왼쪽 위
+右上|Top right|右上|오른쪽 위
+左下|Bottom left|左下|왼쪽 아래
+右下|Bottom right|右下|오른쪽 아래
+缩放与平移|Zoom & pan|ズームとパン|확대/축소 및 이동
+上一张|Previous image|前の画像|이전 이미지
+下一页（单页）|Next single page|次のページ（単ページ）|다음 한 페이지
+上一页（单页）|Previous single page|前のページ（単ページ）|이전 한 페이지
+第一张|First image|最初の画像|첫 이미지
+最后一张|Last image|最後の画像|마지막 이미지
+向后跳 10 张|Skip forward 10 images|10 枚先へ|10개 이미지 앞으로
+向前跳 10 张|Skip back 10 images|10 枚前へ|10개 이미지 뒤로
+重新载入|Reload|再読み込み|다시 불러오기
+放大|Zoom in|拡大|확대
+缩小|Zoom out|縮小|축소
+原始大小 100%|Original size 100%|原寸 100%|원본 크기 100%
+向上滚动|Scroll up|上にスクロール|위로 스크롤
+向下滚动|Scroll down|下にスクロール|아래로 스크롤
+向左滚动|Scroll left|左にスクロール|왼쪽으로 스크롤
+向右滚动|Scroll right|右にスクロール|오른쪽으로 스크롤
+上一屏|Previous screen|前の画面|이전 화면
+下一屏|Next screen|次の画面|다음 화면
+按名称正序|Name, ascending|名前の昇順|이름 오름차순
+按名称逆序|Name, descending|名前の降順|이름 내림차순
+按时间正序|Time, ascending|日時の昇順|시간 오름차순
+按时间逆序|Time, descending|日時の降順|시간 내림차순
+按大小正序|Size, ascending|サイズの昇順|크기 오름차순
+按大小逆序|Size, descending|サイズの降順|크기 내림차순
+打开图片…|Open image…|画像を開く…|이미지 열기…
+打开文件夹…|Open folder…|フォルダーを開く…|폴더 열기…
+打开所在文件夹|Open containing folder|保存先フォルダーを開く|포함된 폴더 열기
+标记 / 取消标记|Mark / Unmark|マーク / 解除|표시 / 해제
+只浏览标记项|Browse marked only|マークのみ閲覧|표시한 항목만 탐색
+复制标记项到…|Copy marked files to…|マークしたファイルをコピー…|표시한 파일 복사 위치…
+移动标记项到…|Move marked files to…|マークしたファイルを移動…|표시한 파일 이동 위치…
+重命名…|Rename…|名前を変更…|이름 바꾸기…
+复制图片|Copy image|画像をコピー|이미지 복사
+复制路径|Copy path|パスをコピー|경로 복사
+从剪贴板打开|Open from clipboard|クリップボードから開く|클립보드에서 열기
+用默认程序打开|Open with default app|既定のアプリで開く|기본 앱으로 열기
+顺时针旋转 90°|Rotate 90° clockwise|右に 90° 回転|시계 방향 90° 회전
+逆时针旋转 90°|Rotate 90° counterclockwise|左に 90° 回転|반시계 방향 90° 회전
+重置变换|Reset transforms|変形をリセット|변형 초기화
+暂停 / 播放动图|Pause / Play animation|アニメを一時停止 / 再生|애니메이션 일시 정지 / 재생
+下一帧|Next frame|次のフレーム|다음 프레임
+上一帧|Previous frame|前のフレーム|이전 프레임
+减速|Slower|遅く|느리게
+加速|Faster|速く|빠르게
+全屏|Fullscreen|全画面|전체 화면
+关闭窗口|Close window|ウィンドウを閉じる|창 닫기
+缩略图栏|Filmstrip|サムネイルバー|썸네일 막대
+网格总览|Grid overview|画像一覧|격자 보기
+幻灯片放映|Start / Stop slideshow|スライドショー開始 / 停止|슬라이드 쇼 시작 / 중지
+切换亮 / 暗主题|Toggle light / dark theme|ライト / ダークを切り替え|밝은 / 어두운 테마 전환
+帮助|Help|ヘルプ|도움말
+语言|Language|言語|언어
+选择语言|Choose your language|言語を選択|언어 선택
+继续|Continue|続ける|계속
+保存语言失败，请检查配置目录的写入权限。|Unable to save language. Check configuration directory permissions.|言語を保存できません。設定フォルダーの書き込み権限を確認してください。|언어를 저장할 수 없습니다. 설정 폴더의 쓰기 권한을 확인하세요.
+已移动|Moved|移動しました|이동됨
+已复制|Copied|コピーしました|복사됨
+  ·  解码 {0}px|  ·  Decoded {0}px|  ·  デコード {0}px|  ·  디코딩 {0}px

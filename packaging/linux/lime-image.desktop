@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=lime image
+GenericName=Image Viewer
+Comment=极简高性能图片查看器
+# 安装后把 Exec 改成实际路径，例如 /opt/lime-image/lime-image
+Exec=lime-image %f
+Icon=lime-image
+Terminal=false
+Categories=Graphics;Viewer;2DGraphics;
+MimeType=image/png;image/jpeg;image/gif;image/webp;image/bmp;image/tiff;image/x-icon;image/avif;image/heif;image/jxl;inode/directory;
+StartupWMClass=lime-image

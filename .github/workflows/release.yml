@@ -1,0 +1,238 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号（不带 v，例如 1.0.0）；手动触发时用于产物命名'
+        required: false
+        default: '0.0.0-dev'
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_CHANNEL: stable
+  # 想锁定版本就填具体版本号（例如 3.35.5），留空则用 channel 的最新版
+  FLUTTER_VERSION: ''
+  APP_NAME: lime-image
+
+jobs:
+  # ---------------------------------------------------------------- version
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            V="${GITHUB_REF_NAME#v}"
+          else
+            V="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "版本：$V"
+
+  # ---------------------------------------------------------------- windows
+  windows:
+    needs: meta
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+      - run: flutter test
+        continue-on-error: true
+
+      - name: Build (Windows x64)
+        run: >
+          flutter build windows --release
+          --build-name=${{ needs.meta.outputs.version }}
+          --build-number=${{ github.run_number }}
+
+      - name: 组装发布目录（含 setup.bat / assoc）
+        shell: pwsh
+        run: |
+          $out = "dist/${{ env.APP_NAME }}-${{ needs.meta.outputs.version }}-windows-x64"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item build/windows/x64/runner/Release/* $out -Recurse -Force
+          # 文件关联脚本：setup.bat 与 lime-image.exe 同级，assoc/ 在其下
+          Copy-Item packaging/windows/setup.bat $out -Force
+          Copy-Item packaging/windows/assoc "$out/assoc" -Recurse -Force
+          Copy-Item README.md "$out/README.md" -Force
+          Get-ChildItem $out | Select-Object Name, Length
+          if (-not (Test-Path "$out/${{ env.APP_NAME }}.exe")) { throw "缺少 ${{ env.APP_NAME }}.exe" }
+          if (-not (Test-Path "$out/setup.bat")) { throw "缺少 setup.bat" }
+
+      - name: 打包 zip
+        shell: pwsh
+        run: |
+          $name = "${{ env.APP_NAME }}-${{ needs.meta.outputs.version }}-windows-x64"
+          Compress-Archive -Path "dist/$name/*" -DestinationPath "dist/$name.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/*.zip
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------ linux
+  linux:
+    needs: meta
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装构建依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter --version
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter test
+        continue-on-error: true
+
+      - name: Build (Linux x64)
+        run: >
+          flutter build linux --release
+          --build-name=${{ needs.meta.outputs.version }}
+          --build-number=${{ github.run_number }}
+
+      - name: 组装发布目录（含 .desktop 与 install.sh）
+        run: |
+          NAME="${APP_NAME}-${{ needs.meta.outputs.version }}-linux-x64"
+          mkdir -p "dist/$NAME"
+          cp -r build/linux/x64/release/bundle/* "dist/$NAME/"
+          cp packaging/linux/lime-image.desktop "dist/$NAME/"
+          cp README.md "dist/$NAME/"
+          cat > "dist/$NAME/install.sh" <<'EOF'
+          #!/usr/bin/env bash
+          # 安装到 ~/.local/share/lime-image 并注册文件关联（无需 root）
+          set -euo pipefail
+          SRC="$(cd "$(dirname "$0")" && pwd)"
+          DEST="${HOME}/.local/share/lime-image"
+          APPS="${HOME}/.local/share/applications"
+          mkdir -p "$DEST" "$APPS" "${HOME}/.local/bin"
+          cp -r "$SRC"/. "$DEST"/
+          chmod +x "$DEST/lime-image"
+          ln -sf "$DEST/lime-image" "${HOME}/.local/bin/lime-image"
+          sed "s|^Exec=.*|Exec=${DEST}/lime-image %f|" "$SRC/lime-image.desktop" \
+            > "$APPS/lime-image.desktop"
+          update-desktop-database "$APPS" 2>/dev/null || true
+          for m in image/png image/jpeg image/gif image/webp image/bmp image/tiff \
+                   image/x-icon image/avif image/heif image/jxl; do
+            xdg-mime default lime-image.desktop "$m" 2>/dev/null || true
+          done
+          echo "已安装到 $DEST，命令：lime-image（确保 ~/.local/bin 在 PATH 中）"
+          EOF
+          chmod +x "dist/$NAME/install.sh"
+          test -x "dist/$NAME/lime-image"
+          tar -C dist -czf "dist/$NAME.tar.gz" "$NAME"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------ macos
+  macos:
+    needs: meta
+    runs-on: macos-14   # Apple Silicon runner
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter --version
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter test
+        continue-on-error: true
+
+      - name: Build (macOS universal)
+        run: >
+          flutter build macos --release
+          --build-name=${{ needs.meta.outputs.version }}
+          --build-number=${{ github.run_number }}
+
+      - name: 打包 dmg + zip（无签名，ad-hoc）
+        run: |
+          NAME="${APP_NAME}-${{ needs.meta.outputs.version }}-macos"
+          APP="build/macos/Build/Products/Release/${APP_NAME}.app"
+          test -d "$APP"
+          # ad-hoc 签名，避免下载后直接被判定为损坏
+          codesign --force --deep --sign - "$APP"
+          mkdir -p dist staging
+          cp -R "$APP" staging/
+          ln -s /Applications staging/Applications
+          hdiutil create -volname "lime image" -srcfolder staging \
+            -ov -format UDZO "dist/$NAME.dmg"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "dist/$NAME.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            dist/*.dmg
+            dist/*.zip
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------- release
+  release:
+    if: github.ref_type == 'tag'
+    needs: [meta, windows, linux, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - run: find artifacts -type f | sort
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: lime image ${{ needs.meta.outputs.version }}
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            artifacts/**/*.zip
+            artifacts/**/*.tar.gz
+            artifacts/**/*.dmg
+          body: |
+            ## 下载
+
+            | 平台 | 文件 | 说明 |
+            |---|---|---|
+            | Windows 10/11 x64 | `*-windows-x64.zip` | 解压即用；双击 `setup.bat` 设为默认看图程序 |
+            | macOS (Apple Silicon) | `*-macos.dmg` | 拖进 Applications；首次打开右键 → 打开（未签名） |
+            | Linux x64 (glibc 2.35+) | `*-linux-x64.tar.gz` | 解压后运行 `./install.sh` 注册文件关联 |
+
+            未做代码签名/公证，系统拦截提示属正常现象。
