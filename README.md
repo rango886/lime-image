@@ -240,3 +240,6 @@ PSD 和 RAW 会先秒开里面自带的预览图，不用等完整解码。
 - [docs/decoding.md](docs/decoding.md) — 解码子系统
 - [docs/release.md](docs/release.md) — GitHub Actions 打包发布与注意事项
 - [docs/roadmap.md](docs/roadmap.md) — 待办与已知限制
+
+## 赞助
+![赞助](docs/img/donate.png)
