@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../core/donation.dart';
 import '../core/platform_ops.dart';
 import '../models/app_action.dart';
 import '../models/enums.dart';
@@ -985,6 +986,12 @@ class _SettingsPageState extends State<SettingsPage> {
         style: Theme.of(context).textTheme.labelMedium
             ?.copyWith(color: scheme.onSurfaceVariant),
       ),
+      const SizedBox(height: 10),
+      _linkRow(lt("项目主页"), kProjectUrl, openable: true),
+
+      const SizedBox(height: 22),
+      ..._donationSection(),
+
       const SizedBox(height: 22),
       _header(lt("配置文件")),
       SelectableText(
@@ -1014,6 +1021,127 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     ];
+  }
+
+  // ---------------------------------------------------------------------------
+  // 捐赠
+  // ---------------------------------------------------------------------------
+
+  /// 二维码是内嵌的 base64 PNG，首次构建这段界面时才解码，之后走缓存。
+  List<Widget> _donationSection() {
+    final scheme = Theme.of(context).colorScheme;
+    return [
+      _header(lt("捐赠支持")),
+      Text(
+        lt("如果 lime image 帮到了你，可以请作者喝杯咖啡。"),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.6),
+      ),
+      const SizedBox(height: 14),
+      Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [
+          _qrCode(lt("支付宝"), alipayQrBytes),
+          _qrCode(lt("微信"), wechatQrBytes),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Text(
+        lt("加密货币"),
+        style: Theme.of(context).textTheme.labelLarge
+            ?.copyWith(color: scheme.onSurfaceVariant),
+      ),
+      const SizedBox(height: 6),
+      _linkRow('BTC', kBtcAddress),
+      _linkRow('ETH', kEthAddress),
+    ];
+  }
+
+  Widget _qrCode(String label, Uint8List bytes) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Image.memory(
+            bytes,
+            width: 132,
+            height: 132,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.none,
+            gaplessPlayback: true,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+
+  /// 一行「标签 + 可选中的文本 + 复制（+ 打开）」。
+  Widget _linkRow(String label, String value, {bool openable = false}) {
+    final scheme = Theme.of(context).colorScheme;
+    final copied = _copiedValue == value;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 74,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(
+              value,
+              maxLines: 1,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.primary),
+            ),
+          ),
+          IconButton(
+            onPressed: () => _copy(value),
+            icon: Icon(copied ? Icons.check : Icons.copy_outlined, size: 15),
+            tooltip: copied ? lt("已复制") : lt("复制"),
+            visualDensity: VisualDensity.compact,
+          ),
+          if (openable)
+            IconButton(
+              onPressed: () => PlatformOps.openWithSystem(value),
+              icon: const Icon(Icons.open_in_new, size: 15),
+              tooltip: lt("在浏览器中打开"),
+              visualDensity: VisualDensity.compact,
+            ),
+        ],
+      ),
+    );
+  }
+
+  String? _copiedValue;
+
+  Future<void> _copy(String value) async {
+    await PlatformOps.copyText(value);
+    if (!mounted) return;
+    setState(() => _copiedValue = value);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (mounted && _copiedValue == value) {
+      setState(() => _copiedValue = null);
+    }
   }
 
   // ---------------------------------------------------------------------------
