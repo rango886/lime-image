@@ -970,8 +970,6 @@ class _SettingsPageState extends State<SettingsPage> {
   // ---------------------------------------------------------------------------
   // 关于
   // ---------------------------------------------------------------------------
-  static const _appVersion = '1.0.0';
-
   List<Widget> _aboutSection() {
     final scheme = Theme.of(context).colorScheme;
     return [
@@ -979,12 +977,6 @@ class _SettingsPageState extends State<SettingsPage> {
       Text(
         lt("lime image 是一款面向桌面的轻量图片查看器，支持常见图片、动图、矢量图、相机 RAW 和漫画浏览。"),
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.6),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        lt("版本 {0}", [_appVersion]),
-        style: Theme.of(context).textTheme.labelMedium
-            ?.copyWith(color: scheme.onSurfaceVariant),
       ),
       const SizedBox(height: 10),
       _linkRow(lt("项目主页"), kProjectUrl, openable: true),
