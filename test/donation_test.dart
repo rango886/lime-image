@@ -10,11 +10,16 @@ void main() {
       'wechat': wechatQrBytes,
     }.entries) {
       final bytes = entry.value;
-      expect(
-        bytes.sublist(0, 8),
-        [137, 80, 78, 71, 13, 10, 26, 10],
-        reason: entry.key,
-      );
+      expect(bytes.sublist(0, 8), [
+        137,
+        80,
+        78,
+        71,
+        13,
+        10,
+        26,
+        10,
+      ], reason: entry.key);
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
       expect(frame.image.width, greaterThan(0), reason: entry.key);

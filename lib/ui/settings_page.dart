@@ -1099,9 +1099,8 @@ class _SettingsPageState extends State<SettingsPage> {
             child: SelectableText(
               value,
               maxLines: 1,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: scheme.primary),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: scheme.primary),
             ),
           ),
           IconButton(
