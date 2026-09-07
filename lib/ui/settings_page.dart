@@ -1029,7 +1029,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   /// 二维码是内嵌的 base64 PNG，首次构建这段界面时才解码，之后走缓存。
   List<Widget> _donationSection() {
-    final scheme = Theme.of(context).colorScheme;
     return [
       _header(lt("捐赠支持")),
       Text(
@@ -1045,15 +1044,6 @@ class _SettingsPageState extends State<SettingsPage> {
           _qrCode(lt("微信"), wechatQrBytes),
         ],
       ),
-      const SizedBox(height: 16),
-      Text(
-        lt("加密货币"),
-        style: Theme.of(context).textTheme.labelLarge
-            ?.copyWith(color: scheme.onSurfaceVariant),
-      ),
-      const SizedBox(height: 6),
-      _linkRow('BTC', kBtcAddress),
-      _linkRow('ETH', kEthAddress),
     ];
   }
 
