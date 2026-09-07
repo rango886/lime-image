@@ -150,7 +150,7 @@ class _ViewerPageState extends State<ViewerPage>
   }
 
   // —— 标题栏 / 光标自动隐藏 ——
-  void _onMouseMove(PointerHoverEvent e) {
+  void _onMouseMove(PointerEvent e) {
     final zone = s.settings.titleBarHeight + 8;
     final nearTop = e.localPosition.dy <= zone;
     if (nearTop) {
@@ -299,7 +299,13 @@ class _ViewerPageState extends State<ViewerPage>
         cursor: _cursorHidden
             ? SystemMouseCursors.none
             : SystemMouseCursors.basic,
+        onEnter: _onMouseMove,
         onHover: _onMouseMove,
+        onExit: (_) {
+          if (_titleVisible) _scheduleTitleHide();
+          _cursorTimer?.cancel();
+          if (_cursorHidden) setState(() => _cursorHidden = false);
+        },
         child: DropTarget(
           onDragEntered: (_) => setState(() => _dragging = true),
           onDragExited: (_) => setState(() => _dragging = false),

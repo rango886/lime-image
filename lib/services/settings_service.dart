@@ -39,22 +39,13 @@ class SettingsService extends ChangeNotifier {
 
   static Directory? _configDir;
 
-  /// 配置目录。按「已有配置 → exe 同目录（便携）→ 系统 AppData」的顺序决定，
-  /// 结果缓存。
-  ///
-  /// 不能再无条件用 `Directory.current`：从资源管理器双击关联文件启动时 CWD
-  /// 不可控（可能是 System32），会导致配置读不到、写不进去。
+  /// 正式程序只使用 exe 同目录，不读取工作目录 / 图片目录中的配置。
+  /// Dart / Flutter 测试宿主使用系统配置目录，避免向 SDK 写入文件。
   static Future<Directory> configDir() async {
     final cached = _configDir;
     if (cached != null) return cached;
 
-    // 1. 旧版本把配置写在工作目录，已有就继续用，保证升级不丢设置
-    final cwd = Directory.current;
-    if (File(p.join(cwd.path, 'settings.json')).existsSync()) {
-      return _configDir = cwd;
-    }
-    // 2. 便携模式：exe 同目录（除非它在系统保护目录里）。
-    // 跑在 dart / flutter_tester 里时不能这么干，否则会往 SDK 目录里写配置。
+    // 不按配置是否存在或目录是否受保护切换位置，读写始终保持一致。
     final exeDir = Directory(p.dirname(Platform.resolvedExecutable));
     final hostedByToolchain = const {
       'dart',
@@ -62,40 +53,10 @@ class SettingsService extends ChangeNotifier {
       'flutter_tester',
       'flutter_tester.exe',
     }.contains(p.basename(Platform.resolvedExecutable).toLowerCase());
-    if (!hostedByToolchain &&
-        (File(p.join(exeDir.path, 'settings.json')).existsSync() ||
-            !_systemProtected(exeDir.path))) {
-      return _configDir = exeDir;
-    }
-    // 3. 兜底：系统配置目录
-    try {
-      final dir = await getApplicationSupportDirectory();
-      if (!await dir.exists()) await dir.create(recursive: true);
-      return _configDir = dir;
-    } catch (_) {
-      return _configDir = cwd;
-    }
-  }
-
-  /// 写不进去的典型位置。刻意不用「真写一个探测文件」的办法：
-  /// 那是开机关键路径上多出的两次同步 IO。真写失败时 saveNow() 已经会记日志。
-  static bool _systemProtected(String path) {
-    if (!Platform.isWindows) return false;
-    final lower = path.toLowerCase();
-    for (final key in const [
-      'ProgramFiles',
-      'ProgramFiles(x86)',
-      'ProgramW6432',
-      'windir',
-    ]) {
-      final base = Platform.environment[key];
-      if (base != null &&
-          base.isNotEmpty &&
-          lower.startsWith(base.toLowerCase())) {
-        return true;
-      }
-    }
-    return lower.contains(r'\windowsapps\');
+    if (!hostedByToolchain) return _configDir = exeDir;
+    final dir = await getApplicationSupportDirectory();
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return _configDir = dir;
   }
 
   static Future<SettingsService> load({Directory? directory}) async {

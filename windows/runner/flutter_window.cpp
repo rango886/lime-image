@@ -1,12 +1,63 @@
 #include "flutter_window.h"
 
 #include <imm.h>
+#include <commctrl.h>
+#include <windowsx.h>
+
+#pragma comment(lib, "comctl32.lib")
 
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
 
 namespace {
+
+// Use one synchronous, DPI-aware hit test for both the Flutter child and
+// the top-level window. Flutter must not compete with native resize cursors.
+LRESULT ResizeHitTest(HWND hwnd, LPARAM position) {
+  if (::IsZoomed(hwnd) ||
+      !(::GetWindowLongPtr(hwnd, GWL_STYLE) & WS_THICKFRAME)) {
+    return HTCLIENT;  // Maximized / fullscreen / non-resizable.
+  }
+  RECT rect;
+  if (!::GetWindowRect(hwnd, &rect)) return HTCLIENT;
+  const POINT point = {GET_X_LPARAM(position), GET_Y_LPARAM(position)};
+  if (!::PtInRect(&rect, point)) return HTCLIENT;
+  const UINT dpi = ::GetDpiForWindow(hwnd);
+  const int edge = ::MulDiv(8, dpi, 96);
+  const int corner = ::MulDiv(20, dpi, 96);
+  const bool left = point.x < rect.left + edge;
+  const bool right = point.x >= rect.right - edge;
+  const bool top = point.y < rect.top + edge;
+  const bool bottom = point.y >= rect.bottom - edge;
+  if ((top && point.x < rect.left + corner) ||
+      (left && point.y < rect.top + corner)) return HTTOPLEFT;
+  if ((top && point.x >= rect.right - corner) ||
+      (right && point.y < rect.top + corner)) return HTTOPRIGHT;
+  if ((bottom && point.x < rect.left + corner) ||
+      (left && point.y >= rect.bottom - corner)) return HTBOTTOMLEFT;
+  if ((bottom && point.x >= rect.right - corner) ||
+      (right && point.y >= rect.bottom - corner)) return HTBOTTOMRIGHT;
+  if (left) return HTLEFT;
+  if (right) return HTRIGHT;
+  if (top) return HTTOP;
+  if (bottom) return HTBOTTOM;
+  return HTCLIENT;
+}
+
+LRESULT CALLBACK ResizeChildProc(HWND hwnd, UINT message, WPARAM wparam,
+                                 LPARAM lparam, UINT_PTR id,
+                                 DWORD_PTR reference) {
+  if (message == WM_NCHITTEST &&
+      ResizeHitTest(reinterpret_cast<HWND>(reference), lparam) != HTCLIENT) {
+    // Let the parent handle the native sizing loop, not Flutter gestures.
+    return HTTRANSPARENT;
+  }
+  if (message == WM_NCDESTROY) {
+    ::RemoveWindowSubclass(hwnd, ResizeChildProc, id);
+  }
+  return ::DefSubclassProc(hwnd, message, wparam, lparam);
+}
 
 void ApplyIme(HWND hwnd, bool enabled) {
   if (!hwnd) {
@@ -50,6 +101,9 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  ::SetWindowSubclass(flutter_controller_->view()->GetNativeWindow(),
+                      ResizeChildProc, 1,
+                      reinterpret_cast<DWORD_PTR>(GetHandle()));
 
   channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       flutter_controller_->engine()->messenger(), "limeimage/platform",
@@ -101,6 +155,11 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  if (message == WM_NCHITTEST) {
+    const LRESULT hit = ResizeHitTest(hwnd, lparam);
+    if (hit != HTCLIENT) return hit;
+  }
+
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =

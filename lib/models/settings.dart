@@ -109,7 +109,7 @@ class Settings {
   BackgroundStyle background = BackgroundStyle.theme;
   bool titleBarAutoHide = true;
   double titleBarHeight = 34;
-  int titleBarHideDelayMs = 1500;
+  int titleBarHideDelayMs = 200;
   bool titleBarShowOnlyName = true;
   double cornerRadius = 5;
   double uiFontScale = 1.0;
