@@ -59,6 +59,11 @@ class FolderService extends ChangeNotifier {
   bool loading = false;
   bool markedOnly = false;
   List<FileEntry>? _unfiltered;
+  Set<String>? _markSet;
+
+  /// 文件夹平铺：把 [directory] 及其所有子文件夹里的图片摊成一个列表
+  bool flat = false;
+  int _loadGen = 0;
 
   StreamSubscription<WatchEvent>? _watchSub;
   Timer? _watchDebounce;
@@ -76,7 +81,9 @@ class FolderService extends ChangeNotifier {
   void seedSingle(String path) {
     directory = p.dirname(path);
     archivePath = null;
+    flat = false;
     _unfiltered = null;
+    _markSet = null;
     markedOnly = false;
     entries = [FileEntry(path)];
     index = 0;
@@ -87,6 +94,11 @@ class FolderService extends ChangeNotifier {
   /// 打开图片 / 目录 / 压缩包
   Future<void> open(String rawPath) async {
     final path = p.normalize(rawPath.replaceAll('"', ''));
+    // 打开新的图片 / 目录时退出平铺和标记过滤
+    flat = false;
+    _unfiltered = null;
+    _markSet = null;
+    markedOnly = false;
     if (await FileSystemEntity.isDirectory(path)) {
       await _loadDirectory(path, select: null);
       return;
@@ -126,6 +138,7 @@ class FolderService extends ChangeNotifier {
     String? select,
     bool recursive = false,
   }) async {
+    final gen = ++_loadGen;
     loading = true;
     directory = dir;
     if (!recursive) archivePath = null;
@@ -152,13 +165,21 @@ class FolderService extends ChangeNotifier {
     } catch (e) {
       debugPrint('[lime image] 目录扫描失败: $e');
     }
+    // 扫描期间又发起了新的加载（比如快速切换平铺），丢弃旧结果
+    if (gen != _loadGen) return;
 
     entries = found;
     if (_sortNeedsStat) await _ensureStats();
+    if (gen != _loadGen) return;
     _applySort();
+    // 只看标记项时重新扫描（刷新 / 平铺切换）也要保持过滤
+    if (markedOnly && _markSet != null) {
+      _unfiltered = entries;
+      entries = entries.where((e) => _markSet!.contains(e.path)).toList();
+    }
     if (select != null) {
       index = entries.indexWhere((e) => p.equals(e.path, select));
-      if (index < 0 && await File(select).exists()) {
+      if (index < 0 && !markedOnly && await File(select).exists()) {
         // 扩展名不在支持列表里，也允许单独打开
         entries.insert(0, FileEntry(select));
         index = 0;
@@ -177,8 +198,37 @@ class FolderService extends ChangeNotifier {
     await _loadDirectory(
       directory!,
       select: keep,
-      recursive: archivePath != null,
+      recursive: archivePath != null || flat,
     );
+  }
+
+  /// 进入 / 退出文件夹平铺。
+  ///
+  /// 进入：以当前文件夹为根，递归列出所有子文件夹的图片，保持当前图不变。
+  /// 退出：回到进入平铺时的那个文件夹。正在看的图如果就在这个文件夹里，就停在它上面；
+  /// 如果在子文件夹里，就从这个文件夹的第一张开始。
+  /// 返回 false 表示无法切换（压缩包本身已是递归列表）。
+  Future<bool> setFlat(bool on) async {
+    if (on == flat) return true;
+    if (archivePath != null || directory == null) return false;
+    final keep = currentPath;
+    final root = directory!;
+    flat = on;
+    if (on) {
+      await _loadDirectory(root, select: keep, recursive: true);
+    } else {
+      final inRoot = keep != null && p.equals(p.dirname(keep), root);
+      await _loadDirectory(root, select: inRoot ? keep : null);
+    }
+    return true;
+  }
+
+  /// 平铺时显示用：当前图相对平铺根目录的子文件夹（根目录下为空串）
+  String relativeDir(String path) {
+    final root = directory;
+    if (root == null) return p.dirname(path);
+    final rel = p.relative(p.dirname(path), from: root);
+    return rel == '.' ? '' : rel;
   }
 
   void _startWatching() {
@@ -250,15 +300,26 @@ class FolderService extends ChangeNotifier {
 
   void _applySort() {
     final asc = settings.sortAscending ? 1 : -1;
+    int cmp(String a, String b) => settings.naturalSort
+        ? naturalCompare(a, b)
+        : a.toLowerCase().compareTo(b.toLowerCase());
     switch (settings.sortField) {
       case SortField.name:
-        entries.sort(
-          (a, b) =>
-              asc *
-              (settings.naturalSort
-                  ? naturalCompare(a.name, b.name)
-                  : a.name.toLowerCase().compareTo(b.name.toLowerCase())),
-        );
+        if (flat) {
+          // 平铺：先按所在子文件夹分组（根目录的图排最前），组内再按文件名
+          final dirs = {for (final e in entries) e.path: relativeDir(e.path)};
+          entries.sort((a, b) {
+            final da = dirs[a.path]!, db = dirs[b.path]!;
+            if (da != db) {
+              if (da.isEmpty) return -asc;
+              if (db.isEmpty) return asc;
+              return asc * cmp(da, db);
+            }
+            return asc * cmp(a.name, b.name);
+          });
+        } else {
+          entries.sort((a, b) => asc * cmp(a.name, b.name));
+        }
       case SortField.time:
         entries.sort((a, b) => asc * a.modified.compareTo(b.modified));
       case SortField.size:
@@ -277,6 +338,7 @@ class FolderService extends ChangeNotifier {
   /// 只浏览标记过的文件
   void applyMarkFilter(Set<String> marked) {
     _unfiltered ??= entries;
+    _markSet = Set.of(marked);
     final keep = currentPath;
     entries = _unfiltered!.where((e) => marked.contains(e.path)).toList();
     markedOnly = true;
@@ -290,6 +352,7 @@ class FolderService extends ChangeNotifier {
     final keep = currentPath;
     entries = _unfiltered!;
     _unfiltered = null;
+    _markSet = null;
     markedOnly = false;
     if (keep != null) index = entries.indexWhere((e) => e.path == keep);
     if (index < 0) index = entries.isEmpty ? -1 : 0;

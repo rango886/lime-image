@@ -97,7 +97,8 @@ class ViewerState extends ChangeNotifier {
   bool closing = false;
   bool isFullscreen = false;
   bool alwaysOnTop = false;
-  bool markedOnly = false;
+  bool get markedOnly => folder.markedOnly;
+  bool get flatMode => folder.flat;
   bool interacting = false; // 交互中（降低插值质量）
   Timer? _interactTimer;
   Timer? _qualityTimer;
@@ -1152,17 +1153,17 @@ class ViewerState extends ChangeNotifier {
       case AppAction.showMarked:
         if (folder.markedOnly) {
           folder.clearMarkFilter();
-          markedOnly = false;
           showToast(lt("显示全部"));
         } else if (marks.count == 0) {
           showToast(lt("还没有标记任何文件"));
         } else {
           folder.applyMarkFilter(marks.all);
-          markedOnly = true;
           showToast(lt("只看标记项（{0}）", [folder.count]));
           await reload();
         }
         notifyListeners();
+      case AppAction.toggleFlatten:
+        await toggleFlatten();
       case AppAction.copyMarked:
         await copyMarkedTo(move: false);
       case AppAction.moveMarked:
@@ -1280,6 +1281,28 @@ class ViewerState extends ChangeNotifier {
       case AppAction.showHelp:
         ui?.showHelp();
     }
+  }
+
+  /// 文件夹平铺开关。列表变了之后，网格 / 缩略图栏 / 漫画模式都直接用新列表，
+  /// 这里只负责：当前图变了就重载、双页重算第二页、漫画模式滚回当前页。
+  Future<void> toggleFlatten() async {
+    if (folder.archivePath != null) {
+      showToast(lt("压缩包已包含所有子文件夹的图片"));
+      return;
+    }
+    if (folder.directory == null) return;
+    final on = !folder.flat;
+    final before = folder.currentPath;
+    if (on) showToast(lt("正在扫描子文件夹…"));
+    if (!await folder.setFlat(on)) return;
+    if (folder.flat != on) return; // 扫描期间又切回去了
+    showToast(on ? lt("文件夹平铺（{0} 张）", [folder.count]) : lt("退出文件夹平铺"));
+    if (folder.currentPath != before || mode == ViewMode.doublePage) {
+      await reload();
+    }
+    if (mode == ViewMode.comic) comicJumpTick++;
+    _prefetchNeighbors();
+    notifyListeners();
   }
 
   void _sort(SortField f, bool asc) {

@@ -359,7 +359,10 @@ class StatusPanel extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 13),
                 child: Text(
-                  s.folder.directory ?? '',
+                  // 平铺时显示当前图所在的实际文件夹
+                  s.flatMode
+                      ? '${lt("平铺")} · ${p.dirname(entry.path)}'
+                      : s.folder.directory ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall

@@ -254,6 +254,11 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
           checked: s.markedOnly,
           icon: s.markedOnly ? Icons.filter_alt : Icons.filter_alt_outlined,
         ),
+        _item(
+          AppAction.toggleFlatten,
+          checked: s.flatMode,
+          icon: s.flatMode ? Icons.account_tree : Icons.account_tree_outlined,
+        ),
         _item(AppAction.copyMarked, icon: Icons.file_copy_outlined),
         _item(AppAction.moveMarked, icon: Icons.drive_file_move_outlined),
       ]),

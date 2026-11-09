@@ -3,6 +3,7 @@ import '../l10n/strings.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../models/app_action.dart';
 import '../services/image_service.dart';
@@ -35,13 +36,24 @@ class _ThumbState extends State<Thumb> {
     if (_img == null) _load();
   }
 
+  @override
+  void didUpdateWidget(Thumb old) {
+    super.didUpdateWidget(old);
+    // 列表换了（排序 / 平铺 / 过滤）同一个格子会被复用来显示别的图
+    if (old.path != widget.path) {
+      _img = widget.state.images.cached(widget.path);
+      if (_img == null) _load();
+    }
+  }
+
   Future<void> _load() async {
+    final path = widget.path;
     try {
       final img = await widget.state.images.load(
-        widget.path,
+        path,
         targetWidth: (widget.size * widget.state.devicePixelRatio).round(),
       );
-      if (mounted) setState(() => _img = img);
+      if (mounted && widget.path == path) setState(() => _img = img);
     } catch (_) {}
   }
 
@@ -80,6 +92,7 @@ class Filmstrip extends StatefulWidget {
 class _FilmstripState extends State<Filmstrip> {
   final ScrollController _controller = ScrollController();
   int _lastIndex = -1;
+  Object? _lastEntries;
 
   @override
   void dispose() {
@@ -89,7 +102,13 @@ class _FilmstripState extends State<Filmstrip> {
 
   void _ensureVisible() {
     final s = widget.state;
-    if (s.folder.index == _lastIndex || !_controller.hasClients) return;
+    if (!_controller.hasClients) return;
+    // 列表换了（切换文件夹平铺 / 换目录）即使序号没变也要重新定位
+    if (s.folder.index == _lastIndex &&
+        identical(s.folder.entries, _lastEntries)) {
+      return;
+    }
+    _lastEntries = s.folder.entries;
     _lastIndex = s.folder.index;
     final itemW = s.settings.filmstripHeight * 0.9;
     final target = (_lastIndex * itemW) - (s.viewport.width / 2) + itemW / 2;
@@ -166,76 +185,138 @@ class _FilmstripState extends State<Filmstrip> {
 }
 
 /// 网格总览
+///
+/// 普通模式就是一整块网格；文件夹平铺时按所在文件夹分段：
+/// 每段先一行标题写清楚是哪个文件夹，下面是这个文件夹的图，
+/// 新的文件夹总是从新的一行开始。
 class GridOverview extends StatelessWidget {
   const GridOverview({super.key, required this.state});
   final ViewerState state;
+
+  /// 把列表切成连续的同文件夹片段：(文件夹相对路径, 起始序号, 张数)
+  List<(String, int, int)> _groups() {
+    final s = state;
+    final entries = s.folder.entries;
+    if (!s.flatMode) return [('', 0, entries.length)];
+    final out = <(String, int, int)>[];
+    var start = 0;
+    String? dir;
+    for (var i = 0; i < entries.length; i++) {
+      final d = s.folder.relativeDir(entries[i].path);
+      if (dir != null && d != dir) {
+        out.add((dir, start, i - start));
+        start = i;
+      }
+      dir = d;
+    }
+    if (dir != null) out.add((dir, start, entries.length - start));
+    return out;
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = state;
     final scheme = Theme.of(context).colorScheme;
+    final root = s.folder.directory ?? '';
+    final rootName = p.basename(root).isEmpty ? root : p.basename(root);
+    final groups = _groups();
+    final delegate = SliverGridDelegateWithMaxCrossAxisExtent(
+      maxCrossAxisExtent: s.settings.thumbSize,
+      mainAxisSpacing: 6,
+      crossAxisSpacing: 6,
+    );
     return Container(
       color: scheme.surface.withValues(alpha: 0.97),
-      child: Column(
+      child: CustomScrollView(
+        slivers: [
+          for (final (dir, start, len) in groups) ...[
+            if (s.flatMode)
+              SliverToBoxAdapter(
+                child: _header(
+                  context,
+                  dir.isEmpty ? rootName : p.join(rootName, dir),
+                  len,
+                  first: start == 0,
+                ),
+              ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(8, s.flatMode ? 0 : 8, 8, 8),
+              sliver: SliverGrid(
+                gridDelegate: delegate,
+                delegate: SliverChildBuilderDelegate(
+                  (context, j) => _tile(context, start + j),
+                  childCount: len,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _header(
+    BuildContext context,
+    String path,
+    int count, {
+    required bool first,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return Container(
+      margin: EdgeInsets.fromLTRB(8, first ? 8 : 10, 8, 6),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 5),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: scheme.outlineVariant)),
+      ),
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              children: [
-                Text(
-                  lt("{0} 张图片", [s.folder.count]),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const Spacer(),
-                IconButton(
-                  iconSize: 18,
-                  onPressed: () => s.invoke(AppAction.toggleGrid),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
+          Icon(Icons.folder_outlined, size: 16, color: scheme.primary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              path,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(8),
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: s.settings.thumbSize,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-              ),
-              itemCount: s.folder.count,
-              itemBuilder: (context, i) {
-                final e = s.folder.entries[i];
-                final selected = i == s.folder.index;
-                return GestureDetector(
-                  onTap: () {
-                    s.goToIndex(i);
-                    s.invoke(AppAction.toggleGrid);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: selected
-                            ? scheme.primary
-                            : scheme.outlineVariant,
-                        width: selected ? 2 : 1,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: Thumb(
-                        state: s,
-                        path: e.path,
-                        size: s.settings.thumbSize * 1.5,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+          const SizedBox(width: 8),
+          Text(
+            '$count',
+            style: text.labelSmall?.copyWith(color: scheme.outline),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _tile(BuildContext context, int i) {
+    final s = state;
+    final scheme = Theme.of(context).colorScheme;
+    final e = s.folder.entries[i];
+    final selected = i == s.folder.index;
+    return GestureDetector(
+      onTap: () {
+        s.goToIndex(i);
+        s.invoke(AppAction.toggleGrid);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: Thumb(
+            state: s,
+            path: e.path,
+            size: s.settings.thumbSize * 1.5,
+          ),
+        ),
       ),
     );
   }

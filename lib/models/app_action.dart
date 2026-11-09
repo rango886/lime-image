@@ -62,6 +62,7 @@ enum AppAction {
   revealInFolder('打开所在文件夹', ActionGroup.file, ['l']),
   toggleMark('标记 / 取消标记', ActionGroup.file, ['x']),
   showMarked('只浏览标记项', ActionGroup.file, ['shift+x']),
+  toggleFlatten('文件夹平铺（含子文件夹）', ActionGroup.file, ['f']),
   copyMarked('复制标记项到…', ActionGroup.file, []),
   moveMarked('移动标记项到…', ActionGroup.file, []),
   deleteFile('删除文件', ActionGroup.file, ['delete']),
