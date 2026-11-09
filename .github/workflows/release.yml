@@ -161,7 +161,7 @@ jobs:
   # ------------------------------------------------------------------ macos
   macos:
     needs: meta
-    runs-on: macos-14   # Apple Silicon runner
+    runs-on: macos-15   # Apple Silicon runner（macos-14 已于 2026-11-02 退役）
     steps:
       - uses: actions/checkout@v4
 

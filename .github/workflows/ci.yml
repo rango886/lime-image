@@ -29,7 +29,7 @@ jobs:
             target: windows
           - os: ubuntu-22.04
             target: linux
-          - os: macos-14
+          - os: macos-15
             target: macos
     runs-on: ${{ matrix.os }}
     steps:
