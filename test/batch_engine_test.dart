@@ -127,7 +127,9 @@ void main() {
   test('names and conflicts', () {
     final n = renderName(
       '{name}_{n}_{w}x{h}',
-      source: r'C:\a\IMG 1.jpg',
+      // Windows 风格盘符路径：用 p.join 拼，否则 Linux 上 \ 不是分隔符，
+      // basename 剩不下文件名
+      source: p.join(r'C:\a', 'IMG 1.jpg'),
       seq: 7,
       digits: 3,
       width: 10,

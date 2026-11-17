@@ -80,11 +80,16 @@ class PresetStore {
 
   Future<void> rename(String from, String to, ConvertPreset preset) async {
     // 先写新的再删旧的：中途失败也不会把预设弄丢。
-    // 只改大小写时两个名字指向同一个文件，不能再删。
     await save(to, preset);
-    if (_fileName(from).toLowerCase() != _fileName(to).toLowerCase()) {
-      await delete(from);
+    final fa = _fileName(from), fb = _fileName(to);
+    if (fa == fb) return; // 同名同写法：save 已经覆盖，没旧文件可删
+    if (fa.toLowerCase() == fb.toLowerCase()) {
+      // 只差大小写：大小写不敏感文件系统（Windows/macOS 默认）上是同一个
+      // 文件，删旧会把刚写的删掉；Linux 上是两个文件，旧的要删掉。
+      if (Platform.isLinux) await delete(from);
+      return;
     }
+    await delete(from);
   }
 
   /// 导入一个预设文件；同名时自动加编号

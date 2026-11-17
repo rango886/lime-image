@@ -165,7 +165,8 @@ void main() {
       33,
     );
 
-    // 只改大小写：Windows 上是同一个文件，不能先写后删把它删没了
+    // 只改大小写：Windows/macOS 上是同一个文件（不能先写后删把它删没了），
+    // Linux 上是两个文件（旧的要删掉），两个平台都只该剩一个 OURS
     await s.renamePreset('Ours', 'OURS');
     final hits = s.presets.where((e) => e.name.toLowerCase() == 'ours');
     expect(hits.map((e) => e.name), ['OURS']);
