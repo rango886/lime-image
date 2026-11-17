@@ -21,6 +21,9 @@
    - Linux：把 `packaging/linux/lime-image.desktop` 装进 `~/.local/share/applications/`，再用 `xdg-mime` 设一下默认。
    - macOS：在 Finder 里右键图片 → 显示简介 → 打开方式里选它。
 3. 语言、主题这些随时能改，按 **F12** 进设置。
+4. 批量转换（Windows）：`setup.bat` 会顺带在右键菜单加一项“批量转换图片”，
+   选中图片、文件夹，或者在文件夹空白处右键都能用（Win11 在“显示更多选项”里）。
+   只想要这个菜单就选 `setup.bat` 的第 3 项，第 4 项是删掉。也可以直接跑 `lime-image.exe --batch <文件或文件夹>`。
 
 ![语言选择](docs/img/language.png)
 <!-- 截图占位：首次启动的语言选择页 -->

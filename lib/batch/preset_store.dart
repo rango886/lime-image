@@ -22,8 +22,13 @@ class PresetStore {
 
   static Future<PresetStore> open() async {
     final base = await SettingsService.configDir();
-    final dir = Directory(p.join(base.path, 'presets'));
-    final store = PresetStore._(dir, File(p.join(base.path, 'batch.json')));
+    return openAt(base.path);
+  }
+
+  /// 指定配置目录（测试用）
+  static Future<PresetStore> openAt(String base) async {
+    final dir = Directory(p.join(base, 'presets'));
+    final store = PresetStore._(dir, File(p.join(base, 'batch.json')));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
       for (final (name, preset) in ConvertPreset.builtIns()) {
@@ -74,8 +79,12 @@ class PresetStore {
   }
 
   Future<void> rename(String from, String to, ConvertPreset preset) async {
-    await delete(from);
+    // 先写新的再删旧的：中途失败也不会把预设弄丢。
+    // 只改大小写时两个名字指向同一个文件，不能再删。
     await save(to, preset);
+    if (_fileName(from).toLowerCase() != _fileName(to).toLowerCase()) {
+      await delete(from);
+    }
   }
 
   /// 导入一个预设文件；同名时自动加编号

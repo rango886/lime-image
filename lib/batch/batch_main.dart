@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -31,19 +32,37 @@ Future<void> runBatchMode(List<String> args) async {
 
   BatchState? state;
   final early = <String>[];
+  // 窗口设好尺寸 / 位置并显示之前，绝不能由别的进程触发 show()：
+  // 否则窗口会先在 runner 默认的左上角闪出来。
+  var shown = false;
+  // Explorer 多选时每个文件一个进程，路径会密集地一条条到达。
+  // 放进缓冲区等安静下来一次性处理，只激活一次窗口，避免反复闪烁。
+  final pending = <String>[];
+  Timer? flushTimer;
+  Future<void> flushPending() async {
+    final s = state;
+    if (s == null || !shown || pending.isEmpty) return;
+    final files = List<String>.of(pending);
+    pending.clear();
+    await s.addPaths(files);
+    try {
+      if (await windowManager.isMinimized()) await windowManager.restore();
+      await windowManager.focus();
+    } catch (_) {}
+  }
+
   final primary = await SingleInstance.acquire(
     args,
     port: kBatchPort,
-    onSecondInstance: (a) async {
-      final files = a.where((x) => !x.startsWith('--')).toList();
-      final s = state;
-      if (s == null) {
+    onSecondInstance: (a) {
+      final files = a.where((x) => !x.startsWith('--'));
+      if (state == null) {
         early.addAll(files);
-      } else {
-        await s.addPaths(files);
+        return;
       }
-      await windowManager.show();
-      await windowManager.focus();
+      pending.addAll(files);
+      flushTimer?.cancel();
+      flushTimer = Timer(const Duration(milliseconds: 250), flushPending);
     },
   );
   if (!primary) exit(0);
@@ -56,12 +75,13 @@ Future<void> runBatchMode(List<String> args) async {
     windowButtonVisibility: false,
   );
   await windowManager.waitUntilReadyToShow(options, () async {
-    await windowManager.setSize(const Size(1320, 840));
+    await windowManager.setSize(const Size(1440, 900));
     await windowManager.center();
     await windowManager.setTitle('Lime Image');
     await windowManager.show();
     await windowManager.focus();
   });
+  shown = true;
 
   final store = await PresetStore.open();
   final s = state = BatchState(settings: cfg, store: store);
@@ -72,6 +92,11 @@ Future<void> runBatchMode(List<String> args) async {
 
   await s.addPaths([...paths, ...early]);
   early.clear();
+  // init / 首批 addPaths 期间来的路径
+  if (pending.isNotEmpty) {
+    flushTimer?.cancel();
+    flushTimer = Timer(const Duration(milliseconds: 250), flushPending);
+  }
 
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     images.warmUp();

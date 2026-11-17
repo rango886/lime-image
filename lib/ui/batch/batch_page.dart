@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
 import '../../batch/batch_state.dart';
 import '../../batch/convert_preset.dart';
+import '../../core/platform_ops.dart';
 import '../../l10n/strings.dart';
 import '../../models/settings.dart';
 import '../../services/image_service.dart';
@@ -37,6 +38,7 @@ class _BatchPageState extends State<BatchPage> {
   final FocusNode _focus = FocusNode();
   bool _dragging = false;
   bool _listOpen = false;
+  double _sidebarWidth = 320;
 
   BatchState get s => widget.state;
 
@@ -44,6 +46,31 @@ class _BatchPageState extends State<BatchPage> {
   void dispose() {
     _focus.dispose();
     super.dispose();
+  }
+
+  bool _quitting = false;
+
+  /// 主动退出。不用 windowManager.close()：它只是往窗口投递 SC_CLOSE，
+  /// 在关闭按钮「按下即响应」时这条消息会被吞掉，窗口关不掉。
+  /// 跟看图主窗口一样：先藏窗、写盘、释放端口，再 destroy + exit。
+  Future<void> _quit() async {
+    if (_quitting) return;
+    _quitting = true;
+    // 底线：万一后面哪一步卡住，也保证进程退出
+    Timer(const Duration(milliseconds: 1200), () => exit(0));
+    try {
+      await windowManager.hide();
+    } catch (_) {}
+    try {
+      await s.shutdown();
+    } catch (_) {}
+    try {
+      await SingleInstance.release();
+    } catch (_) {}
+    try {
+      await windowManager.destroy();
+    } catch (_) {}
+    exit(0);
   }
 
   Future<void> _start() async {
@@ -60,7 +87,7 @@ class _BatchPageState extends State<BatchPage> {
       case AfterRun.openFolder:
         if (sum.lastDir != null) await openFolder(sum.lastDir!);
       case AfterRun.close:
-        if (sum.failed == 0) await windowManager.close();
+        if (sum.failed == 0) await _quit();
     }
   }
 
@@ -106,7 +133,7 @@ class _BatchPageState extends State<BatchPage> {
       } else if (s.summary != null) {
         s.dismissSummary();
       } else {
-        windowManager.close();
+        _quit();
       }
     } else {
       return KeyEventResult.ignored;
@@ -169,18 +196,62 @@ class _BatchPageState extends State<BatchPage> {
     final border = BorderSide(color: scheme.outlineVariant);
     return LayoutBuilder(
       builder: (context, c) {
-        final narrow = c.maxWidth < 1040;
-        final list = Container(
-          width: 260,
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            border: Border(right: border),
-          ),
+        final narrow = c.maxWidth < 1200;
+        const dividerWidth = 8.0;
+        final maxSidebarWidth =
+            (c.maxWidth - 340 - dividerWidth - (narrow ? 0 : 480)).clamp(
+              280.0,
+              560.0,
+            );
+        final sidebarWidth = _sidebarWidth.clamp(280.0, maxSidebarWidth);
+        final list = SizedBox(
+          width: sidebarWidth,
           child: BatchFileList(state: s, images: widget.images),
         );
-        final center = BatchPreview(
-          state: s,
-          background: widget.settings.background,
+        final sidebar = ColoredBox(
+          color: scheme.surface,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              list,
+              MouseRegion(
+                cursor: SystemMouseCursors.resizeLeftRight,
+                child: GestureDetector(
+                  key: const ValueKey('batch-sidebar-resizer'),
+                  behavior: HitTestBehavior.opaque,
+                  onDoubleTap: () => setState(() => _sidebarWidth = 320),
+                  onHorizontalDragUpdate: (d) => setState(() {
+                    _sidebarWidth = (sidebarWidth + d.delta.dx).clamp(
+                      280.0,
+                      maxSidebarWidth,
+                    );
+                  }),
+                  child: SizedBox(
+                    width: dividerWidth,
+                    height: double.infinity,
+                    child: Center(
+                      child: Container(width: 1, color: scheme.outlineVariant),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        final center = Column(
+          children: [
+            Expanded(
+              child: BatchPreview(
+                state: s,
+                background: widget.settings.background,
+              ),
+            ),
+            if (s.preview != null)
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: c.maxHeight * 0.45),
+                child: SingleChildScrollView(child: BatchInfoPanel(state: s)),
+              ),
+          ],
         );
         final options = Container(
           width: 340,
@@ -190,7 +261,7 @@ class _BatchPageState extends State<BatchPage> {
         if (!narrow) {
           return Row(
             children: [
-              list,
+              sidebar,
               Expanded(child: center),
               options,
             ],
@@ -207,7 +278,7 @@ class _BatchPageState extends State<BatchPage> {
                       left: 0,
                       top: 0,
                       bottom: 0,
-                      child: Material(elevation: 8, child: list),
+                      child: Material(elevation: 8, child: sidebar),
                     ),
                 ],
               ),
@@ -254,7 +325,7 @@ class _BatchPageState extends State<BatchPage> {
               ),
             ),
             LayoutBuilder(
-              builder: (context, c) => MediaQuery.sizeOf(context).width < 1040
+              builder: (context, c) => MediaQuery.sizeOf(context).width < 1200
                   ? WinButton(
                       icon: _listOpen ? Icons.menu_open : Icons.menu,
                       tooltip: lt('文件列表'),
@@ -276,7 +347,7 @@ class _BatchPageState extends State<BatchPage> {
               icon: Icons.close,
               tooltip: lt('关闭'),
               danger: true,
-              onTap: windowManager.close,
+              onTap: _quit,
             ),
           ],
         ),
@@ -309,9 +380,6 @@ class _BottomBar extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final s = state;
-    final pv = s.preview;
-    final muted = theme.textTheme.labelMedium?.copyWith(color: scheme.outline);
-
     Widget left;
     if (s.running) {
       final eta = s.eta;
@@ -336,41 +404,12 @@ class _BottomBar extends StatelessWidget {
           ),
         ],
       );
-    } else if (pv?.targetPath != null) {
-      final t = pv!.targetPath!;
-      left = Tooltip(
-        message: t,
-        child: Row(
-          children: [
-            Flexible(
-              child: Text(
-                p.basename(pv.path),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: muted,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Icon(Icons.arrow_forward, size: 13, color: scheme.outline),
-            ),
-            Flexible(
-              flex: 3,
-              child: Text(
-                t,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium,
-              ),
-            ),
-          ],
-        ),
-      );
     } else {
       left = const SizedBox.shrink();
     }
 
     return Container(
+      key: const ValueKey('batch-action-bar'),
       height: 46,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(

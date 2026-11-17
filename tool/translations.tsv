@@ -346,3 +346,148 @@ PNG 文本|PNG text|PNG テキスト|PNG 텍스트
 支付宝|Alipay|Alipay|알리페이
 微信|WeChat|WeChat|위챗
 加密货币|Crypto|暗号資産|암호화폐
+网页 JPEG|Web JPEG|Web 用 JPEG|웹 JPEG
+缩略图|Thumbnails|サムネイル|썸네일
+压缩包已包含所有子文件夹的图片|Archives already include images from all subfolders|アーカイブは既に全サブフォルダーの画像を含みます|압축 파일은 이미 모든 하위 폴더 이미지를 포함합니다|壓縮檔已包含所有子資料夾的圖片
+正在扫描子文件夹…|Scanning subfolders…|サブフォルダーをスキャン中…|하위 폴더 검색 중…|正在掃描子資料夾…
+文件夹平铺（{0} 张）|Flattened folder ({0} images)|フォルダー展開（{0} 枚）|폴더 펼침 ({0}개)|資料夾平鋪（{0} 張）
+退出文件夹平铺|Folder flatten off|フォルダー展開を解除|폴더 펼치기 해제|退出資料夾平鋪
+添加图片|Add images|画像を追加|이미지 추가
+添加文件夹|Add folder|フォルダーを追加|폴더 추가
+失败 {0}|{0} failed|失敗 {0}|실패 {0}
+{0} 张|{0} images|{0} 枚|{0}개
+{0} / {1} 张|{0} / {1} images|{0} / {1} 枚|{0} / {1}개
+没有失败的文件|No failed files|失敗したファイルはありません|실패한 파일이 없습니다
+拖入图片或文件夹|Drop images or folders here|画像またはフォルダーをドロップ|이미지나 폴더를 끌어다 놓으세요
+包含子文件夹|Include subfolders|サブフォルダーを含める|하위 폴더 포함
+全选|Select all|すべて選択|모두 선택
+全不选|Select none|すべて選択解除|모두 선택 해제
+按名称排序|Sort by name|名前で並べ替え|이름순 정렬
+按大小排序|Sort by size|サイズで並べ替え|크기순 정렬
+移除已完成|Remove completed|完了した項目を削除|완료된 항목 제거
+清空列表|Clear list|リストをクリア|목록 비우기
+打开输出文件|Open output file|出力ファイルを開く|출력 파일 열기
+恢复默认裁切|Reset crop|切り抜きをリセット|자르기 초기화
+从列表移除|Remove from list|リストから削除|목록에서 제거
+裁切|Crop|切り抜き|자르기
+格式|Format|形式|형식
+输出|Output|出力|출력
+文件名|File name|ファイル名|파일 이름
+元数据|Metadata|メタデータ|메타데이터
+不变|Unchanged|変更なし|변경 없음
+自动摆正|Auto-orient|自動回転|자동 방향 보정
+旋转|Rotate|回転|회전
+翻转|Flip|反転|뒤집기
+应用于|Apply to|適用対象|적용 대상
+方式|Mode|方式|방식
+比例|Ratio|比率|비율
+自动横竖|Match orientation|縦横自動|가로/세로 자동 맞춤
+上 / 下|Top / Bottom|上 / 下|위 / 아래
+左 / 右|Left / Right|左 / 右|왼쪽 / 오른쪽
+单位|Unit|単位|단위
+容差|Tolerance|許容差|허용 오차
+留边|Padding|余白|여백
+位置|Position|位置|위치
+宽 × 高|Width × Height|幅 × 高さ|너비 × 높이
+不放大|Don't upscale|拡大しない|확대 안 함
+插值|Resampling|補間|보간
+需要 ffmpeg|Requires ffmpeg|ffmpeg が必要です|ffmpeg 필요
+质量|Quality|品質|품질
+色度|Chroma|色差|크로마
+无损|Lossless|ロスレス|무손실
+压缩等级|Compression level|圧縮レベル|압축 수준
+速度|Speed|速度|속도
+压缩|Compression|圧縮|압축
+限制大小|Max file size|サイズ上限|최대 파일 크기
+透明底色|Background for transparency|透明部分の背景色|투명 영역 배경색
+避免变大|Avoid larger files|大きくならないようにする|파일 커지지 않게
+文件夹|Folder|フォルダー|폴더
+最近使用|Recent|最近使用|최근 사용
+保持目录结构|Keep folder structure|フォルダー構成を保持|폴더 구조 유지
+重名时|If file exists|同名ファイルがある場合|같은 이름이 있으면
+完成后|When done|完了後|완료 후
+模板|Template|テンプレート|템플릿
+序号|Counter|連番|일련번호
+位数|Digits|桁数|자릿수
+扩展名|Extension|拡張子|확장자
+保留修改时间|Keep modified time|更新日時を保持|수정 시간 유지
+未保存的设置|Unsaved settings|未保存の設定|저장하지 않은 설정
+保存预设|Save preset|プリセットを保存|프리셋 저장
+另存为…|Save as…|名前を付けて保存…|다른 이름으로 저장…
+导入…|Import…|インポート…|가져오기…
+导出…|Export…|エクスポート…|내보내기…
+另存为预设|Save as preset|プリセットとして保存|프리셋으로 저장
+新预设|New preset|新しいプリセット|새 프리셋
+覆盖预设「{0}」？|Overwrite preset “{0}”?|プリセット「{0}」を上書きしますか？|프리셋 “{0}”을(를) 덮어쓸까요?
+重命名预设|Rename preset|プリセット名を変更|프리셋 이름 바꾸기
+删除预设「{0}」？|Delete preset “{0}”?|プリセット「{0}」を削除しますか？|프리셋 “{0}”을(를) 삭제할까요?
+批量转换|Batch convert|一括変換|일괄 변환
+开始转换|Start|変換開始|변환 시작
+开始转换（{0}）|Start ({0})|変換開始（{0}）|변환 시작 ({0})
+原图|Original|元画像|원본
+结果|Result|結果|결과
+对比|Compare|比較|비교
+适应|Fit|フィット|맞춤
+跳过：{0}|Skipped: {0}|スキップ：{0}|건너뜀: {0}
+保留原图|Original kept|元画像を維持|원본 유지
+转换前|Before|変換前|변환 전
+转换后|After|変換後|변환 후
+透明|Transparency|透明|투명
+有|Yes|あり|있음
+完成|Done|完了|완료
+跳过|Skip|スキップ|건너뛰기
+节省|Saved|削減|절약
+增加|Increased|増加|증가
+打开输出文件夹|Open output folder|出力フォルダーを開く|출력 폴더 열기
+重试失败项|Retry failed|失敗した項目を再試行|실패 항목 다시 시도
+全部|All|すべて|전체
+横图|Landscape|横長|가로 이미지
+竖图|Portrait|縦長|세로 이미지
+不裁切|No crop|切り抜かない|자르지 않음
+按比例|Aspect ratio|比率で|비율로
+按边距|Margins|余白で|여백으로
+固定尺寸|Fixed size|固定サイズ|고정 크기
+去除纯色边|Trim solid borders|単色の余白を除去|단색 테두리 제거
+不缩放|No resize|リサイズしない|크기 조정 안 함
+长边|Long edge|長辺|긴 변
+短边|Short edge|短辺|짧은 변
+宽度|Width|幅|너비
+高度|Height|高さ|높이
+限定框|Fit in box|枠に収める|상자에 맞춤
+百分比|Percentage|パーセント|백분율
+高质量|High quality|高品質|고품질
+线性|Bilinear|バイリニア|선형
+最近邻|Nearest neighbor|ニアレストネイバー|최근접 이웃
+保持原格式|Keep format|元の形式を維持|원래 형식 유지
+无压缩|None|圧縮なし|압축 안 함
+取第一帧|First frame only|最初のフレームのみ|첫 프레임만
+原文件夹|Same folder|元のフォルダー|원래 폴더
+子文件夹|Subfolder|サブフォルダー|하위 폴더
+指定文件夹|Custom folder|指定フォルダー|지정 폴더
+自动编号|Add number|連番を付ける|번호 붙이기
+覆盖|Overwrite|上書き|덮어쓰기
+保留|Keep|保持|유지
+去掉位置信息|Remove location|位置情報を削除|위치 정보 제거
+全部去掉|Remove all|すべて削除|모두 제거
+无操作|Do nothing|何もしない|아무 작업 안 함
+不支持 SVG|SVG is not supported|SVG には対応していません|SVG는 지원하지 않습니다
+无法解码|Cannot decode|デコードできません|디코딩할 수 없습니다
+ffmpeg 没有 AV1 编码器|ffmpeg has no AV1 encoder|ffmpeg に AV1 エンコーダーがありません|ffmpeg에 AV1 인코더가 없습니다
+已取消|Cancelled|キャンセルしました|취소됨
+已存在|Already exists|既に存在します|이미 있음
+已跳过|Skipped|スキップしました|건너뜀
+文件夹平铺（含子文件夹）|Flatten folder (include subfolders)|フォルダーを展開（サブフォルダー含む）|폴더 펼치기 (하위 폴더 포함)|資料夾平鋪（含子資料夾）
+平铺|Flat|展開|펼침
+批量转换图片|Batch convert images|画像を一括変換|이미지 일괄 변환
+没有可转换的图片|No images to convert|変換できる画像がありません|변환할 이미지가 없습니다
+启动批量转换失败|Failed to start batch convert|一括変換を起動できませんでした|일괄 변환을 시작하지 못했습니다
+输入路径|Input path|入力パス|입력 경로
+输出路径|Output path|出力パス|출력 경로
+
+像素数|Pixel count|ピクセル数|픽셀 수
+对齐倍数|Align to|整列倍数|정렬 배수
+关|Off|オフ|끔
+固定尺寸下不生效|Not applied to fixed size|固定サイズでは無効|고정 크기에는 적용 안 됨
+1M = 1024 × 1024 像素|1M = 1024 × 1024 pixels|1M = 1024 × 1024 ピクセル|1M = 1024 × 1024 픽셀
+缩放后居中裁掉多余的边，不变形|Trims the excess around the center after scaling, no distortion|縮小後に中央基準で余りを切り取り、歪みなし|축소 후 가운데 기준으로 남는 가장자리를 잘라 왜곡 없음
+尺寸小于对齐倍数|Smaller than the alignment multiple|整列倍数より小さいサイズ|정렬 배수보다 작은 크기

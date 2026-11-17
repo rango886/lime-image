@@ -9,7 +9,7 @@ import '../widgets.dart';
 
 const double _labelW = 76;
 
-/// 右栏：预设 + 按处理顺序排列的各组参数
+/// 右栏：预设和各组参数
 class BatchOptions extends StatefulWidget {
   const BatchOptions({super.key, required this.state});
   final BatchState state;
@@ -211,13 +211,66 @@ class _BatchOptionsState extends State<BatchOptions> {
   String _fmtNum(double v) =>
       v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(2);
 
-  String _cropSummary() => switch (c.crop) {
-    CropMode.none => c.crop.label,
-    CropMode.ratio => '${_fmtNum(c.ratioW)}:${_fmtNum(c.ratioH)}',
-    CropMode.margin => c.crop.label,
-    CropMode.fixed => '${c.fixedW} × ${c.fixedH}',
-    CropMode.trim => c.crop.label,
-  };
+  String _cropSummary() {
+    final base = switch (c.crop) {
+      CropMode.none => c.crop.label,
+      CropMode.ratio => '${_fmtNum(c.ratioW)}:${_fmtNum(c.ratioH)}',
+      CropMode.margin => c.crop.label,
+      CropMode.fixed => '${c.fixedW} × ${c.fixedH}',
+      CropMode.trim => c.crop.label,
+    };
+    return c.cropAlignActive ? '$base · ÷${c.cropAlign}' : base;
+  }
+
+  static const _aligns = [8, 16, 32, 64, 128];
+
+  /// 对齐倍数：预设 + 自定义，0 = 关
+  List<Widget> _alignRows(int v, ValueChanged<int> onChanged) => [
+    _row(
+      lt('对齐倍数'),
+      Wrap(
+        spacing: 5,
+        runSpacing: 5,
+        children: [
+          LimeChip(
+            label: lt('关'),
+            dim: true,
+            selected: v <= 1,
+            onTap: () => onChanged(0),
+          ),
+          for (final n in _aligns)
+            LimeChip(
+              label: '$n',
+              dim: true,
+              selected: v == n,
+              onTap: () => onChanged(n),
+            ),
+        ],
+      ),
+    ),
+    _row(
+      '',
+      Align(
+        alignment: Alignment.centerLeft,
+        child: _num(
+          v.toDouble(),
+          (x) => onChanged(x.round()),
+          unit: 'px',
+          max: 4096,
+          width: 100,
+        ),
+      ),
+    ),
+  ];
+
+  Widget _hint(String text) => _row(
+    '',
+    Text(
+      text,
+      style: Theme.of(context).textTheme.labelMedium
+          ?.copyWith(color: Theme.of(context).colorScheme.outline),
+    ),
+  );
 
   static const _ratios = [(1.0, 1.0), (4.0, 3.0), (3.0, 2.0), (16.0, 9.0)];
 
@@ -371,6 +424,20 @@ class _BatchOptionsState extends State<BatchOptions> {
         ),
       ),
     ],
+    if (c.crop == CropMode.fixed)
+      _row(
+        lt('对齐倍数'),
+        Text(
+          lt('固定尺寸下不生效'),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.outline),
+        ),
+      )
+    else ...[
+      ..._alignRows(c.cropAlign, (v) => _set((p) => p.cropAlign = v)),
+      // 按比例已经有位置选择；其他模式开了对齐才需要决定从哪边裁
+      if (c.cropAlign > 1 && c.crop != CropMode.ratio) _anchorRow(),
+    ],
   ];
 
   Widget _anchorRow() => Padding(
@@ -397,12 +464,18 @@ class _BatchOptionsState extends State<BatchOptions> {
   );
 
   // —— 尺寸 ——
-  String _resizeSummary() => switch (c.resize) {
-    ResizeMode.none => c.resize.label,
-    ResizeMode.percent => '${c.resizeValue.round()}%',
-    ResizeMode.fit => '${c.fitW} × ${c.fitH}',
-    _ => '${c.resize.label} ${c.resizeValue.round()}px',
-  };
+  String _resizeSummary() {
+    final base = switch (c.resize) {
+      ResizeMode.none => c.resize.label,
+      ResizeMode.percent => '${c.resizeValue.round()}%',
+      ResizeMode.fit => '${c.fitW} × ${c.fitH}',
+      ResizeMode.pixels => '${_fmtNum(c.megapixels)}M',
+      _ => '${c.resize.label} ${c.resizeValue.round()}px',
+    };
+    return c.resizeAlignActive ? '$base · ÷${c.resizeAlign}' : base;
+  }
+
+  static const _megapixels = [0.25, 0.5, 1.0, 2.0, 4.0];
 
   List<Widget> _resize() => [
     _drop<ResizeMode>(
@@ -479,7 +552,43 @@ class _BatchOptionsState extends State<BatchOptions> {
           ],
         ),
       ),
+    if (c.resize == ResizeMode.pixels) ...[
+      _row(
+        '',
+        Align(
+          alignment: Alignment.centerLeft,
+          child: _num(
+            c.megapixels,
+            (v) => _set((p) => p.megapixels = v),
+            unit: 'M',
+            min: 0.01,
+            max: 1000,
+            width: 100,
+            digits: 2,
+          ),
+        ),
+      ),
+      _row(
+        '',
+        Wrap(
+          spacing: 5,
+          runSpacing: 5,
+          children: [
+            for (final v in _megapixels)
+              LimeChip(
+                label: '${_fmtNum(v)}M',
+                dim: true,
+                selected: c.megapixels == v,
+                onTap: () => _set((p) => p.megapixels = v),
+              ),
+          ],
+        ),
+      ),
+      _hint(lt('1M = 1024 × 1024 像素')),
+    ],
     if (c.resize != ResizeMode.none) ...[
+      ..._alignRows(c.resizeAlign, (v) => _set((p) => p.resizeAlign = v)),
+      if (c.resizeAlign > 1) _hint(lt('缩放后居中裁掉多余的边，不变形')),
       _switch(lt('不放大'), c.noUpscale, (v) => _set((p) => p.noUpscale = v)),
       _drop<ResizeFilter>(
         lt('插值'),
@@ -1009,13 +1118,21 @@ class _PresetBar extends StatelessWidget {
       s.presetName ?? lt('新预设'),
     );
     if (name == null || name.isEmpty) return;
-    if (s.presets.any((e) => e.name == name) && name != s.presetName) {
+    // 预设按名字存成文件，Windows 文件名不分大小写
+    if (_taken(s, name, except: s.presetName)) {
       if (!context.mounted) return;
       final ok = await _confirm(context, lt('覆盖预设「{0}」？', [name]));
       if (!ok) return;
     }
     await s.savePreset(name);
   }
+
+  static bool _taken(BatchState s, String name, {String? except}) =>
+      s.presets.any(
+        (e) =>
+            e.name.toLowerCase() == name.toLowerCase() &&
+            e.name.toLowerCase() != except?.toLowerCase(),
+      );
 
   static Future<void> _rename(
     BuildContext context,
@@ -1024,6 +1141,11 @@ class _PresetBar extends StatelessWidget {
   ) async {
     final name = await _askName(context, lt('重命名预设'), from);
     if (name == null || name.isEmpty || name == from) return;
+    if (_taken(s, name, except: from)) {
+      if (!context.mounted) return;
+      final ok = await _confirm(context, lt('覆盖预设「{0}」？', [name]));
+      if (!ok) return;
+    }
     await s.renamePreset(from, name);
   }
 

@@ -4,6 +4,39 @@ import 'package:flutter/material.dart';
 
 import '../models/enums.dart';
 
+/// 中性灰阶：R=G=B，不掺任何色相；亮色接近白、暗色接近黑，但都不用纯 #FFF / #000
+class LimeNeutral {
+  // 暗色（深黑）
+  static const darkBg = Color(0xFF0E0E0E); // 页面底色
+  static const darkCanvas = Color(0xFF0B0B0B); // 看图画布
+  static const darkSurface = Color(0xFF141414);
+  static const darkLow = Color(0xFF171717);
+  static const darkMid = Color(0xFF1B1B1B);
+  static const darkHigh = Color(0xFF212121);
+  static const darkHighest = Color(0xFF282828);
+  static const darkMenu = Color(0xFF1C1C1C);
+  static const darkOverlay = Color(0xFF151515);
+  static const darkText = Color(0xFFEDEDED);
+  static const darkTextDim = Color(0xFFA6A6A6);
+  static const darkOutline = Color(0xFF6E6E6E);
+  static const darkOutlineDim = Color(0xFF2C2C2C);
+
+  // 亮色（近白）
+  static const lightBg = Color(0xFFFAFAFA);
+  static const lightCanvas = Color(0xFFF3F3F3);
+  static const lightSurface = Color(0xFFFDFDFD);
+  static const lightLow = Color(0xFFF7F7F7);
+  static const lightMid = Color(0xFFF2F2F2);
+  static const lightHigh = Color(0xFFEDEDED);
+  static const lightHighest = Color(0xFFE7E7E7);
+  static const lightMenu = Color(0xFFFDFDFD);
+  static const lightOverlay = Color(0xFFFCFCFC);
+  static const lightText = Color(0xFF1A1A1A);
+  static const lightTextDim = Color(0xFF5E5E5E);
+  static const lightOutline = Color(0xFF8F8F8F);
+  static const lightOutlineDim = Color(0xFFE0E0E0);
+}
+
 class LimeTheme {
   /// 界面字体：优先系统 UI 字体，CJK 用对应平台的黑体兜底，避免粗细不一
   static String? get _fontFamily {
@@ -29,11 +62,53 @@ class LimeTheme {
     double radius = 10,
     double fontScale = 1.0,
   }) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: Color(accent),
-      brightness: brightness,
-    );
     final isDark = brightness == Brightness.dark;
+    final accentColor = Color(accent);
+    final onAccent =
+        ThemeData.estimateBrightnessForColor(accentColor) == Brightness.dark
+        ? const Color(0xFFFAFAFA)
+        : const Color(0xFF111111);
+    // 强调色只用于高亮（primary / 选中态），所有底色、文字、描边都换成中性灰，
+    // 避免 fromSeed 把强调色的色相混进背景里
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: accentColor,
+          brightness: brightness,
+        ).copyWith(
+          primary: accentColor,
+          onPrimary: onAccent,
+          surfaceTint: Colors.transparent,
+          surface: isDark ? LimeNeutral.darkSurface : LimeNeutral.lightSurface,
+          onSurface: isDark ? LimeNeutral.darkText : LimeNeutral.lightText,
+          onSurfaceVariant: isDark
+              ? LimeNeutral.darkTextDim
+              : LimeNeutral.lightTextDim,
+          surfaceDim: isDark ? LimeNeutral.darkBg : LimeNeutral.lightHighest,
+          surfaceBright: isDark
+              ? LimeNeutral.darkHighest
+              : LimeNeutral.lightSurface,
+          surfaceContainerLowest: isDark
+              ? LimeNeutral.darkCanvas
+              : LimeNeutral.lightSurface,
+          surfaceContainerLow: isDark
+              ? LimeNeutral.darkLow
+              : LimeNeutral.lightLow,
+          surfaceContainer: isDark ? LimeNeutral.darkMid : LimeNeutral.lightMid,
+          surfaceContainerHigh: isDark
+              ? LimeNeutral.darkHigh
+              : LimeNeutral.lightHigh,
+          surfaceContainerHighest: isDark
+              ? LimeNeutral.darkHighest
+              : LimeNeutral.lightHighest,
+          outline: isDark ? LimeNeutral.darkOutline : LimeNeutral.lightOutline,
+          outlineVariant: isDark
+              ? LimeNeutral.darkOutlineDim
+              : LimeNeutral.lightOutlineDim,
+          inverseSurface: isDark ? LimeNeutral.darkText : LimeNeutral.lightText,
+          onInverseSurface: isDark ? LimeNeutral.darkBg : LimeNeutral.lightBg,
+          shadow: Colors.black,
+          scrim: Colors.black,
+        );
     final r = BorderRadius.circular(radius);
 
     final base = isDark ? ThemeData.dark() : ThemeData.light();
@@ -66,7 +141,7 @@ class LimeTheme {
           displayColor: scheme.onSurface,
         );
 
-    final menuSurface = isDark ? const Color(0xFF23252A) : Colors.white;
+    final menuSurface = isDark ? LimeNeutral.darkMenu : LimeNeutral.lightMenu;
 
     return ThemeData(
       useMaterial3: true,
@@ -77,8 +152,10 @@ class LimeTheme {
       textTheme: textTheme,
       visualDensity: VisualDensity.compact,
       scaffoldBackgroundColor: isDark
-          ? const Color(0xFF16171A)
-          : const Color(0xFFF5F6F7),
+          ? LimeNeutral.darkBg
+          : LimeNeutral.lightBg,
+      canvasColor: isDark ? LimeNeutral.darkSurface : LimeNeutral.lightSurface,
+      cardColor: isDark ? LimeNeutral.darkMid : LimeNeutral.lightSurface,
       splashFactory: NoSplash.splashFactory,
       dividerTheme: DividerThemeData(
         space: 1,
@@ -212,7 +289,7 @@ class LimeTheme {
       tooltipTheme: TooltipThemeData(
         waitDuration: const Duration(milliseconds: 500),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xF02A2C31) : const Color(0xF03A3D42),
+          color: isDark ? const Color(0xF02E2E2E) : const Color(0xF03A3A3A),
           borderRadius: BorderRadius.circular(radius * 0.6),
         ),
         textStyle: TextStyle(
@@ -236,29 +313,28 @@ class LimeTheme {
     switch (style) {
       case BackgroundStyle.theme:
         return scheme.brightness == Brightness.dark
-            ? const Color(0xFF121316)
-            : const Color(0xFFEDEEF0);
+            ? LimeNeutral.darkCanvas
+            : LimeNeutral.lightCanvas;
       case BackgroundStyle.black:
         return Colors.black;
       case BackgroundStyle.dark:
-        return const Color(0xFF1E1F22);
+        return const Color(0xFF1E1E1E);
       case BackgroundStyle.light:
-        return const Color(0xFFE6E7E9);
+        return const Color(0xFFE6E6E6);
       case BackgroundStyle.white:
         return Colors.white;
       case BackgroundStyle.checker:
         return scheme.brightness == Brightness.dark
-            ? const Color(0xFF1A1B1E)
-            : const Color(0xFFF0F1F3);
+            ? const Color(0xFF1A1A1A)
+            : const Color(0xFFF0F0F0);
     }
   }
 
   /// 浮层（标题栏 / 状态窗 / 缩略图栏）用的表面色
   static Color overlaySurface(ColorScheme scheme, {double alpha = 0.9}) {
     final dark = scheme.brightness == Brightness.dark;
-    return (dark ? const Color(0xFF1D1F23) : Colors.white).withValues(
-      alpha: alpha,
-    );
+    return (dark ? LimeNeutral.darkOverlay : LimeNeutral.lightOverlay)
+        .withValues(alpha: alpha);
   }
 }
 
@@ -271,9 +347,9 @@ class CheckerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const cell = 12.0;
     final a = Paint()
-      ..color = dark ? const Color(0xFF232427) : const Color(0xFFFFFFFF);
+      ..color = dark ? const Color(0xFF232323) : const Color(0xFFFCFCFC);
     final b = Paint()
-      ..color = dark ? const Color(0xFF1B1C1F) : const Color(0xFFE2E3E5);
+      ..color = dark ? const Color(0xFF1A1A1A) : const Color(0xFFE2E2E2);
     canvas.drawRect(Offset.zero & size, a);
     for (var y = 0.0; y < size.height; y += cell) {
       for (var x = 0.0; x < size.width; x += cell) {

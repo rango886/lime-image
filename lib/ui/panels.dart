@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import '../models/app_action.dart';
 import '../services/image_service.dart';
 import '../state/viewer_state.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
 /// 缩略图（列表 / 网格共用）
@@ -128,11 +129,7 @@ class _FilmstripState extends State<Filmstrip> {
     return Container(
       height: h,
       decoration: BoxDecoration(
-        color:
-            (scheme.brightness == Brightness.dark
-                    ? const Color(0xFF17181B)
-                    : Colors.white)
-                .withValues(alpha: 0.9),
+        color: LimeTheme.overlaySurface(scheme),
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: ListView.builder(

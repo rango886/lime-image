@@ -135,6 +135,41 @@ Add-Type -AssemblyName Microsoft.VisualBasic
     } catch (_) {}
   }
 
+  /// 起一个独立的批量转换窗口（本程序 --batch 模式）。
+  /// 文件多时按命令行长度分批启动，后启动的进程会通过单实例端口
+  /// 把路径交给第一个窗口。
+  static Future<bool> launchBatch(List<String> paths) async {
+    try {
+      final exe = Platform.resolvedExecutable;
+      const limit = 24000; // Windows 命令行上限约 32K，留余量
+      var chunk = <String>[];
+      var len = 0;
+      var first = true;
+      Future<void> flush() async {
+        if (chunk.isEmpty) return;
+        await Process.start(exe, [
+          '--batch',
+          ...chunk,
+        ], mode: ProcessStartMode.detached);
+        // 等第一个进程占好单实例端口，后面的才能转交路径
+        if (first) await Future.delayed(const Duration(milliseconds: 800));
+        first = false;
+        chunk = <String>[];
+        len = 0;
+      }
+
+      for (final path in paths) {
+        if (len + path.length + 3 > limit) await flush();
+        chunk.add(path);
+        len += path.length + 3;
+      }
+      await flush();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// 复制文本到剪贴板
   static Future<void> copyText(String text) =>
       Clipboard.setData(ClipboardData(text: text));

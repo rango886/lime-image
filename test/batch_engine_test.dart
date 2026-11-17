@@ -68,6 +68,46 @@ void main() {
     expect(resizeTarget(pre, 400, 200), (400, 200)); // 不放大
   });
 
+  test('pixel-count resize stays under the target', () {
+    final pre = ConvertPreset()
+      ..resize = ResizeMode.pixels
+      ..megapixels = 1;
+    expect(resizeTarget(pre, 2048, 2048), (1024, 1024));
+    final (w, h) = resizeTarget(pre, 4000, 3000);
+    expect(w * h, lessThanOrEqualTo(1024 * 1024));
+    expect(w * h, greaterThan(1024 * 1024 * 0.99));
+    expect(resizeTarget(pre, 800, 600), (800, 600)); // 不放大
+    pre.noUpscale = false;
+    expect(resizeTarget(pre, 512, 512), (1024, 1024));
+  });
+
+  test('alignment helpers', () {
+    expect(alignDown(1080, 64), 1024);
+    expect(alignDown(1024, 64), 1024);
+    expect(alignDown(50, 64), 50); // 不到一个倍数就不动
+    expect(alignDown(1080, 0), 1080);
+    expect(alignTooSmall(50, 200, 64), isTrue);
+    expect(alignTooSmall(64, 200, 64), isFalse);
+    // 居中：1000×700 → 960×640，左右各去 20，上下各去 30
+    final r = alignCropRect(const IRect(10, 10, 1000, 700), 64, 4);
+    expect((r.x, r.y, r.w, r.h), (30, 40, 960, 640));
+    // 左上锚点：只去右边和下边
+    final tl = alignCropRect(const IRect(0, 0, 1000, 700), 64, 0);
+    expect((tl.x, tl.y, tl.w, tl.h), (0, 0, 960, 640));
+
+    final pre = ConvertPreset()
+      ..crop = CropMode.fixed
+      ..cropAlign = 64
+      ..resizeAlign = 64;
+    expect(pre.cropAlignActive, isFalse); // 固定尺寸不对齐
+    expect(pre.resizeAlignActive, isFalse); // 不缩放不对齐
+    pre
+      ..resize = ResizeMode.pixels
+      ..megapixels = 2;
+    final back = ConvertPreset.fromJson(pre.toJson());
+    expect((back.cropAlign, back.resizeAlign, back.megapixels), (64, 64, 2.0));
+  });
+
   test('exif patch resets orientation and wipes GPS', () {
     final e = _exif();
     expect(exifOrientation(e), 6);
@@ -93,7 +133,14 @@ void main() {
     );
     expect(n, 'IMG 1_007_10x20');
     expect(
-      renderName('a:b?', source: 'x.jpg', seq: 1, digits: 1, width: 1, height: 1),
+      renderName(
+        'a:b?',
+        source: 'x.jpg',
+        seq: 1,
+        digits: 1,
+        width: 1,
+        height: 1,
+      ),
       'a_b_',
     );
     final claimed = <String>{};
@@ -228,6 +275,90 @@ void main() {
         expect((back.pix.width, back.pix.height), (64, 96));
       });
     }
+
+    test('crop, rotate and resize are applied in that fixed order', () async {
+      final ff = await ffmpeg();
+      if (ff == null) return markTestSkipped('no ffmpeg');
+      final src = p.join(dir.path, 'pipeline.png');
+      await Process.run(ff, [
+        '-v',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        'testsrc2=size=200x100',
+        '-frames:v',
+        '1',
+        '-y',
+        src,
+      ]);
+      final engine = ConvertEngine();
+      final r = await engine.process(
+        await engine.load(src),
+        ConvertPreset()
+          ..format = OutputFormat.png
+          ..crop = CropMode.fixed
+          ..fixedW = 100
+          ..fixedH = 40
+          ..rotate = RotateBy.cw90
+          ..resize = ResizeMode.width
+          ..resizeValue = 20,
+      );
+      // 200×100 → 裁成 100×40 → 转成 40×100 → 按宽缩到 20×50。
+      expect(r.ok, isTrue);
+      expect((r.outW, r.outH), (20, 50));
+    });
+
+    test('crop and resize alignment', () async {
+      final ff = await ffmpeg();
+      if (ff == null) return markTestSkipped('no ffmpeg');
+      final src = p.join(dir.path, 'align.png');
+      await Process.run(ff, [
+        '-v',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        'testsrc2=size=1000x700',
+        '-frames:v',
+        '1',
+        '-y',
+        src,
+      ]);
+      final engine = ConvertEngine();
+      final img = await engine.load(src);
+      // 不裁切 + 对齐 64：直接裁成 960×640
+      var r = await engine.process(
+        img,
+        ConvertPreset()
+          ..format = OutputFormat.png
+          ..cropAlign = 64,
+      );
+      expect((r.outW, r.outH), (960, 640));
+      expect(r.warning, isNull);
+      // 像素数 0.25M + 尺寸对齐 64：缩到 611×428，再裁成 576×384
+      r = await engine.process(
+        img,
+        ConvertPreset()
+          ..format = OutputFormat.png
+          ..resize = ResizeMode.pixels
+          ..megapixels = 0.25
+          ..resizeAlign = 64,
+      );
+      expect((r.outW, r.outH), (576, 384));
+      // 边长不到倍数：保持原样 + 警告
+      r = await engine.process(
+        img,
+        ConvertPreset()
+          ..format = OutputFormat.png
+          ..cropAlign = 128
+          ..crop = CropMode.margin
+          ..marginTop = 300
+          ..marginBottom = 300,
+      );
+      expect((r.outW, r.outH), (896, 100));
+      expect(r.warning, kAlignWarning);
+    });
 
     test('size limit lowers quality', () async {
       final ff = await ffmpeg();

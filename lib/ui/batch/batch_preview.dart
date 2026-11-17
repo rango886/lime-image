@@ -3,10 +3,11 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as p;
+import 'package:flutter/services.dart';
 
 import '../../batch/batch_state.dart';
 import '../../batch/convert_preset.dart';
+import '../../batch/engine/convert_engine.dart' show kAlignWarning;
 import '../../core/platform_ops.dart';
 import '../../core/utils.dart';
 import '../../l10n/strings.dart';
@@ -14,7 +15,7 @@ import '../../models/enums.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
-/// 中栏：画布 + 浮层（模式切换、缩放、前后信息、完成汇总）
+/// 中栏：画布 + 浮层（模式切换、缩放、完成汇总）
 class BatchPreview extends StatelessWidget {
   const BatchPreview({
     super.key,
@@ -57,8 +58,6 @@ class BatchPreview extends StatelessWidget {
             child: Center(child: _ModeBar(state: s)),
           ),
           Positioned(top: 12, right: 12, child: _ZoomButton(state: s)),
-          if (pv != null)
-            Positioned(left: 14, bottom: 14, child: _InfoCard(state: s)),
           if (s.summary != null)
             Positioned(
               top: 58,
@@ -90,9 +89,8 @@ class _Glass extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: (dark ? const Color(0xFF1A1C20) : Colors.white).withValues(
-              alpha: 0.86,
-            ),
+            color: (dark ? LimeNeutral.darkOverlay : LimeNeutral.lightOverlay)
+                .withValues(alpha: 0.86),
             borderRadius: r,
             border: Border.all(color: dark ? Colors.white12 : Colors.black12),
           ),
@@ -161,7 +159,7 @@ class _Canvas extends StatelessWidget {
 
     if (err != null && out == null && s.previewMode != PreviewMode.original) {
       return Center(
-        child: _Message(icon: Icons.error_outline, text: err),
+        child: _Message(icon: Icons.error_outline, text: lt(err)),
       );
     }
 
@@ -526,9 +524,12 @@ class _CropPainter extends CustomPainter {
 // 前后信息
 // ---------------------------------------------------------------------------
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.state});
+/// 预览下方的属性对比和双行完整路径，不遮挡预览画布。
+class BatchInfoPanel extends StatelessWidget {
+  const BatchInfoPanel({super.key, required this.state});
   final BatchState state;
+
+  static const double _labelColWidth = 84;
 
   @override
   Widget build(BuildContext context) {
@@ -536,44 +537,64 @@ class _InfoCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     final pv = state.preview!;
     final r = pv.result;
-    final label = theme.textTheme.labelSmall?.copyWith(color: scheme.outline);
-    final value = theme.textTheme.labelMedium?.copyWith(
+    final labelSize = (theme.textTheme.labelSmall?.fontSize ?? 11) - 0.5;
+    final valueSize = (theme.textTheme.bodySmall?.fontSize ?? 11.5) - 1.0;
+    final label = theme.textTheme.labelSmall?.copyWith(
+      fontSize: labelSize,
+      color: scheme.onSurfaceVariant,
+    );
+    final value = theme.textTheme.bodySmall?.copyWith(
+      fontSize: valueSize,
+      color: scheme.onSurface,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    final hi = value?.copyWith(color: scheme.primary);
-
-    TableRow row(String k, String a, String b, {TextStyle? bStyle}) => TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2.5),
-          child: Text(k, style: label),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2.5),
-          child: Text(a, style: value),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2.5),
-          child: Text(b, style: bStyle ?? value),
-        ),
-      ],
-    );
+    final before = value;
+    final after = value;
 
     Widget body;
     if (r == null) {
-      body = const SizedBox(height: 40);
+      body = const SizedBox(height: 52);
     } else {
       final ok = r.ok;
       String meta(bool exif, bool gps) =>
           exif ? (gps ? 'EXIF · GPS' : 'EXIF') : lt('无');
       final keepGps =
           state.preset.metadata == MetadataPolicy.keep && r.srcHasGps;
-      final dimsChanged = r.srcW != r.outW || r.srcH != r.outH;
       final outSize = r.keepOriginal ? r.srcSize : pv.outBytes;
       final pct = r.srcSize == 0 ? 0 : (outSize - r.srcSize) * 100 / r.srcSize;
-      final sizeStyle = value?.copyWith(
-        color: pct <= 0 ? scheme.primary : scheme.error,
-      );
+      final deltaColor = pct <= 0 ? scheme.primary : scheme.error;
+      final alignBadge = ok && r.warning == kAlignWarning
+          ? Tooltip(
+              message: lt(kAlignWarning),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                size: 14,
+                color: Colors.orange.shade700,
+              ),
+            )
+          : null;
+      final sizeBadge = ok && r.srcSize > 0 && pct.round() != 0
+          ? Tooltip(
+              message:
+                  '${pct < 0 ? lt('节省') : lt('增加')} '
+                  '${formatBytes((outSize - r.srcSize).abs())}',
+              child: Container(
+                key: const ValueKey('batch-size-delta'),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: deltaColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${pct > 0 ? '+' : ''}${pct.round()}%',
+                  style: label?.copyWith(
+                    color: deltaColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            )
+          : null;
       final fmtAfter = !ok
           ? '—'
           : r.keepOriginal
@@ -582,131 +603,255 @@ class _InfoCard extends StatelessWidget {
           ? '${r.format.label} · ${r.quality}'
           : r.format.label;
 
-      body = Table(
-        columnWidths: const {
-          0: IntrinsicColumnWidth(),
-          1: FixedColumnWidth(118),
-          2: FixedColumnWidth(118),
-        },
-        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-        children: [
-          TableRow(
+      final fields = [
+        (lt('格式'), r.srcFormat, fmtAfter),
+        (lt('尺寸'), '${r.srcW} × ${r.srcH}', ok ? '${r.outW} × ${r.outH}' : '—'),
+        (lt('大小'), formatBytes(r.srcSize), ok ? formatBytes(outSize) : '—'),
+        (
+          lt('透明'),
+          r.srcAlpha ? lt('有') : lt('无'),
+          ok ? (r.outAlpha ? lt('有') : lt('无')) : '—',
+        ),
+        (
+          lt('元数据'),
+          meta(r.srcHasExif, r.srcHasGps),
+          ok ? meta(r.exifKept, r.exifKept && keepGps) : '—',
+        ),
+      ];
+      Widget cell(
+        String text,
+        TextStyle? style, {
+        Widget? trailing,
+        double vertical = 3.5,
+      }) => Padding(
+        padding: EdgeInsets.symmetric(vertical: vertical, horizontal: 10),
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(text, style: style),
+            ?trailing,
+          ],
+        ),
+      );
+      Widget rowLabel(bool result, {double horizontal = 14}) => Padding(
+        padding: EdgeInsets.symmetric(vertical: 3.5, horizontal: horizontal),
+        child: Text(result ? lt('转换后') : lt('转换前'), style: label),
+      );
+      body = LayoutBuilder(
+        builder: (context, c) {
+          if (c.maxWidth >= 560) {
+            // 中栏够宽时横排属性，用三行代替六行，给图片留出更多高度。
+            return Table(
+              columnWidths: const {
+                0: FixedColumnWidth(_labelColWidth),
+                1: FlexColumnWidth(1.05),
+                2: FlexColumnWidth(1.25),
+                3: FlexColumnWidth(1.45),
+                4: FlexColumnWidth(1.0),
+                5: FlexColumnWidth(1.05),
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              children: [
+                TableRow(
+                  children: [
+                    const SizedBox.shrink(),
+                    for (final f in fields) cell(f.$1, label, vertical: 3.5),
+                  ],
+                ),
+                TableRow(
+                  children: [
+                    rowLabel(false),
+                    for (final f in fields) cell(f.$2, before),
+                  ],
+                ),
+                TableRow(
+                  children: [
+                    rowLabel(true),
+                    for (var i = 0; i < fields.length; i++)
+                      cell(
+                        fields[i].$3,
+                        after,
+                        trailing: i == 2
+                            ? sizeBadge
+                            : i == 1
+                            ? alignBadge
+                            : null,
+                      ),
+                  ],
+                ),
+              ],
+            );
+          }
+          return Table(
+            columnWidths: const {
+              0: FixedColumnWidth(_labelColWidth),
+              1: FlexColumnWidth(),
+              2: FlexColumnWidth(),
+            },
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
-              const SizedBox(width: 52),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(lt('转换前'), style: theme.textTheme.titleSmall),
+              TableRow(
+                children: [
+                  const SizedBox.shrink(),
+                  rowLabel(false, horizontal: 10),
+                  rowLabel(true, horizontal: 10),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(lt('转换后'), style: theme.textTheme.titleSmall),
-              ),
+              for (var i = 0; i < fields.length; i++)
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 3.5, 8, 3.5),
+                      child: Text(fields[i].$1, style: label),
+                    ),
+                    cell(fields[i].$2, before, vertical: 3.5),
+                    cell(
+                      fields[i].$3,
+                      after,
+                      vertical: 3.5,
+                      trailing: i == 2
+                          ? sizeBadge
+                          : i == 1
+                          ? alignBadge
+                          : null,
+                    ),
+                  ],
+                ),
             ],
-          ),
-          row(lt('格式'), r.srcFormat, fmtAfter),
-          row(
-            lt('尺寸'),
-            '${r.srcW} × ${r.srcH}',
-            ok ? '${r.outW} × ${r.outH}' : '—',
-            bStyle: dimsChanged ? hi : null,
-          ),
-          row(
-            lt('大小'),
-            formatBytes(r.srcSize),
-            ok
-                ? '${formatBytes(outSize)}  ${pct >= 0 ? '+' : ''}${pct.round()}%'
-                : '—',
-            bStyle: ok ? sizeStyle : null,
-          ),
-          row(
-            lt('透明'),
-            r.srcAlpha ? lt('有') : lt('无'),
-            ok ? (r.outAlpha ? lt('有') : lt('无')) : '—',
-          ),
-          row(
-            lt('元数据'),
-            meta(r.srcHasExif, r.srcHasGps),
-            ok ? meta(r.exifKept, r.exifKept && keepGps) : '—',
-          ),
-        ],
+          );
+        },
       );
     }
 
-    final target = pv.targetPath;
-    return _Glass(
-      padding: const EdgeInsets.fromLTRB(13, 10, 13, 10),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            key: const ValueKey('batch-comparison-card'),
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.image_outlined, size: 14, color: scheme.primary),
-              const SizedBox(width: 7),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 260),
-                child: Text(
-                  p.basename(pv.path),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              if (pv.loading) const LinearProgressIndicator(minHeight: 2),
+              body,
+              const SizedBox(height: 2),
+              _InfoPathRow(
+                path: pv.path,
+                label: lt('输入路径'),
+                textKey: const ValueKey('batch-source-path'),
+                labelWidth: _labelColWidth,
+                labelSize: labelSize,
+                valueSize: valueSize - 1.0,
               ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: pv.loading
-                    ? const CircularProgressIndicator(strokeWidth: 1.5)
-                    : null,
+              _InfoPathRow(
+                path: pv.targetPath,
+                label: lt('输出路径'),
+                textKey: const ValueKey('batch-target-path'),
+                labelWidth: _labelColWidth,
+                labelSize: labelSize,
+                valueSize: valueSize - 1.0,
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          body,
           if (r?.error != null) ...[
-            const SizedBox(height: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 300),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 6),
               child: Text(
-                r!.error!,
+                lt(r!.error!),
+                style: label?.copyWith(color: scheme.error),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// 路径标签固定，只有完整路径横向滚动，复制按钮不随路径移走。
+class _InfoPathRow extends StatelessWidget {
+  const _InfoPathRow({
+    required this.path,
+    required this.label,
+    required this.textKey,
+    required this.labelWidth,
+    required this.labelSize,
+    required this.valueSize,
+  });
+
+  final String? path;
+  final String label;
+  final Key textKey;
+  final double labelWidth;
+  final double labelSize;
+  final double valueSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final muted = scheme.onSurfaceVariant;
+    return SizedBox(
+      height: 24,
+      child: Row(
+        children: [
+          SizedBox(
+            width: labelWidth,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 14, right: 8),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: scheme.error,
+                  fontSize: labelSize,
+                  color: muted,
                 ),
               ),
             ),
-          ],
-          if (target != null) ...[
-            const SizedBox(height: 6),
-            Divider(height: 1, color: scheme.outlineVariant),
-            const SizedBox(height: 6),
-            Tooltip(
-              message: target,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.subdirectory_arrow_right,
-                    size: 13,
-                    color: scheme.outline,
-                  ),
-                  const SizedBox(width: 5),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 280),
-                    child: Text(
-                      p.basename(target),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: label,
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Tooltip(
+                message: path ?? '',
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Text(
+                    path ?? '—',
+                    key: textKey,
+                    softWrap: false,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontSize: valueSize,
+                      color: muted,
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ],
+          ),
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: IconButton(
+              tooltip: lt('复制路径'),
+              onPressed: path == null
+                  ? null
+                  : () => Clipboard.setData(ClipboardData(text: path!)),
+              icon: const Icon(Icons.copy_outlined, size: 12.5),
+              color: muted,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints.tightFor(width: 22, height: 22),
+            ),
+          ),
         ],
       ),
     );
@@ -759,7 +904,7 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           stat('${sum.done}', lt('完成')),
-          if (sum.skipped > 0) stat('${sum.skipped}', lt('跳过')),
+          if (sum.skipped > 0) stat('${sum.skipped}', lt('已跳过')),
           if (sum.failed > 0) stat('${sum.failed}', lt('失败'), scheme.error),
           if (sum.done > 0)
             stat(

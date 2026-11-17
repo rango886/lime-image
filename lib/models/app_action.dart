@@ -71,6 +71,7 @@ enum AppAction {
   copyPath('复制路径', ActionGroup.file, ['ctrl+shift+c']),
   pasteOpen('从剪贴板打开', ActionGroup.file, ['ctrl+v']),
   openWithSystem('用默认程序打开', ActionGroup.file, ['ctrl+enter']),
+  batchConvert('批量转换图片', ActionGroup.file, []),
 
   rotateCW('顺时针旋转 90°', ActionGroup.image, ['r']),
   rotateCCW('逆时针旋转 90°', ActionGroup.image, ['shift+r']),

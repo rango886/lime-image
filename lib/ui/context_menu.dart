@@ -248,6 +248,7 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
         _item(AppAction.renameFile, icon: Icons.drive_file_rename_outline),
         _item(AppAction.deleteFile, icon: Icons.delete_outline),
         _item(AppAction.openWithSystem, icon: Icons.open_in_new),
+        _item(AppAction.batchConvert, icon: Icons.transform),
         _divider,
         _item(
           AppAction.showMarked,

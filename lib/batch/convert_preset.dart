@@ -43,7 +43,8 @@ enum ResizeMode {
   width('宽度'),
   height('高度'),
   fit('限定框'),
-  percent('百分比');
+  percent('百分比'),
+  pixels('像素数');
 
   const ResizeMode(this._label);
   final String _label;
@@ -181,11 +182,20 @@ class ConvertPreset {
   int trimTolerance = 16;
   int trimPadding = 0;
 
+  /// 裁切后宽高各自向下取整到它的倍数；0 / 1 = 不对齐。固定尺寸模式下不生效。
+  int cropAlign = 0;
+
   // —— 尺寸 ——
   ResizeMode resize = ResizeMode.none;
   double resizeValue = 1920;
   int fitW = 1920;
   int fitH = 1080;
+
+  /// 像素数模式的目标，单位 M，1M = 1024² 像素
+  double megapixels = 1;
+
+  /// 缩放后宽高各自向下取整到它的倍数（居中裁掉多余），0 / 1 = 不对齐
+  int resizeAlign = 0;
   bool noUpscale = true;
   ResizeFilter filter = ResizeFilter.quality;
 
@@ -228,6 +238,12 @@ class ConvertPreset {
   /// 方向是否会改变像素（不算 EXIF 摆正）
   bool get hasUserTransform => rotate != RotateBy.none || flipH || flipV;
 
+  /// 固定尺寸是用户明确填的数字，不再对齐
+  bool get cropAlignActive => cropAlign > 1 && crop != CropMode.fixed;
+
+  /// 不缩放时尺寸对齐和裁切对齐重复，不生效
+  bool get resizeAlignActive => resizeAlign > 1 && resize != ResizeMode.none;
+
   String extFor(OutputFormat f) =>
       f == OutputFormat.jpeg ? (jpegLongExt ? 'jpeg' : 'jpg') : f.ext;
 
@@ -251,10 +267,13 @@ class ConvertPreset {
     'fixedH': fixedH,
     'trimTolerance': trimTolerance,
     'trimPadding': trimPadding,
+    'cropAlign': cropAlign,
     'resize': resize.name,
     'resizeValue': resizeValue,
     'fitW': fitW,
     'fitH': fitH,
+    'megapixels': megapixels,
+    'resizeAlign': resizeAlign,
     'noUpscale': noUpscale,
     'filter': filter.name,
     'format': format.name,
@@ -316,10 +335,13 @@ class ConvertPreset {
       ..fixedH = i('fixedH', d.fixedH)
       ..trimTolerance = i('trimTolerance', d.trimTolerance)
       ..trimPadding = i('trimPadding', d.trimPadding)
+      ..cropAlign = i('cropAlign', d.cropAlign).clamp(0, 4096)
       ..resize = _enum(ResizeMode.values, j['resize'], d.resize)
       ..resizeValue = n('resizeValue', d.resizeValue)
       ..fitW = i('fitW', d.fitW)
       ..fitH = i('fitH', d.fitH)
+      ..megapixels = n('megapixels', d.megapixels)
+      ..resizeAlign = i('resizeAlign', d.resizeAlign).clamp(0, 4096)
       ..noUpscale = b('noUpscale', d.noUpscale)
       ..filter = _enum(ResizeFilter.values, j['filter'], d.filter)
       ..format = _enum(OutputFormat.values, j['format'], d.format)

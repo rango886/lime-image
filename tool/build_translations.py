@@ -9,9 +9,12 @@ rows = {}
 for line in (root / 'tool/translations.tsv').read_text(encoding='utf-8').splitlines():
     if not line:
         continue
-    source, en, ja, ko = [s.replace(r'\n', '\n') for s in line.split('|')]
+    cols = [s.replace(r'\n', '\n') for s in line.split('|')]
+    source, en, ja, ko = cols[:4]
+    # 可选第 5 列：手写繁中（如台湾用语“資料夾”），留空则用 OpenCC 自动转
+    zht = cols[4] if len(cols) > 4 and cols[4] else converter.convert(source)
     assert source not in rows, source
-    rows[source] = [converter.convert(source), en, ja, ko]
+    rows[source] = [zht, en, ja, ko]
 
 def dart(value):
     return json.dumps(value, ensure_ascii=False).replace('$', r'\$')

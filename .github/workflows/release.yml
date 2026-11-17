@@ -77,6 +77,7 @@ jobs:
           Get-ChildItem $out | Select-Object Name, Length
           if (-not (Test-Path "$out/${{ env.APP_NAME }}.exe")) { throw "缺少 ${{ env.APP_NAME }}.exe" }
           if (-not (Test-Path "$out/setup.bat")) { throw "缺少 setup.bat" }
+          if (-not (Test-Path "$out/assoc/setup.ps1")) { throw "缺少 assoc/setup.ps1" }
 
       - name: 打包 zip
         shell: pwsh

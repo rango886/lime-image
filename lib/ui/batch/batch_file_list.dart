@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 import '../../batch/batch_state.dart';
+import '../../batch/engine/convert_engine.dart' show kAlignWarning;
 import '../../core/platform_ops.dart';
 import '../../core/utils.dart';
 import '../../l10n/strings.dart';
@@ -200,7 +201,7 @@ class _ListMenu extends StatelessWidget {
     return MenuAnchor(
       menuChildren: [
         MenuItemButton(
-          onPressed: () => s.setRecursive(!s.recursive),
+          onPressed: s.running ? null : () => s.setRecursive(!s.recursive),
           leadingIcon: Icon(
             s.recursive ? Icons.check_box : Icons.check_box_outline_blank,
             size: 15,
@@ -392,17 +393,25 @@ class _Trailing extends StatelessWidget {
           ),
         );
       case ItemStatus.done:
+        final warn = item.message == kAlignWarning;
         return Tooltip(
           message: item.outPath == null
               ? ''
               : '${p.basename(item.outPath!)}\n'
-                    '${formatBytes(item.size)} → ${formatBytes(item.outSize)}',
+                    '${formatBytes(item.size)} → ${formatBytes(item.outSize)}'
+                    '${item.message == null ? '' : '\n${lt(item.message!)}'}',
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(formatBytes(item.outSize), style: small),
               const SizedBox(width: 4),
-              Icon(Icons.check_circle, size: 13, color: scheme.primary),
+              warn
+                  ? Icon(
+                      Icons.warning_amber_rounded,
+                      size: 13,
+                      color: Colors.orange.shade700,
+                    )
+                  : Icon(Icons.check_circle, size: 13, color: scheme.primary),
             ],
           ),
         );
@@ -417,7 +426,7 @@ class _Trailing extends StatelessWidget {
         );
       case ItemStatus.failed:
         return Tooltip(
-          message: item.message ?? '',
+          message: lt(item.message ?? ''),
           child: Icon(Icons.error_outline, size: 14, color: scheme.error),
         );
     }

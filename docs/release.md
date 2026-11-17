@@ -38,8 +38,9 @@ lime-image-1.0.0-windows-x64/
   lime-image.exe
   flutter_windows.dll
   data/ ...
-  setup.bat                    ← 与 exe 同级
+  setup.bat                    ← 与 exe 同级（纯 ASCII，只转调 assoc\setup.ps1）
   assoc/
+    setup.ps1                  ← 菜单本体（UTF-8 BOM）
     register-limeimage.ps1
     set-default-limeimage.ps1
     SFTA.ps1
@@ -47,8 +48,11 @@ lime-image-1.0.0-windows-x64/
 
 这个层级不能动。`packaging/windows/setup.bat` 里写死了：
 
-* `cd /d "%~dp0"`，然后找 `%~dp0assoc\register-limeimage.ps1`；
+* `cd /d "%~dp0"`，然后调 `%~dp0assoc\setup.ps1`，它再调同目录的 `register-limeimage.ps1`；
 * `register-limeimage.ps1` 在**自身目录**和**上一级目录**两处找 `lime-image.exe`。
+
+`setup.bat` 必须保持纯 ASCII：cmd 在 `chcp 65001` 下解析含中文的行会错位，
+把半行当命令执行（双击时初始代码页是 936 才复现）。中文菜单都放在 `setup.ps1` 里。
 
 所以 `setup.bat` 必须和 exe 平级、`assoc/` 必须在 `setup.bat` 旁边。
 workflow 的组装步骤里加了 `Test-Path` 断言（缺 exe 或缺 setup.bat 直接让构建失败），

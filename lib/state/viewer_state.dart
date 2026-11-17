@@ -1194,6 +1194,16 @@ class ViewerState extends ChangeNotifier {
       case AppAction.openWithSystem:
         final path = folder.currentPath;
         if (path != null) await PlatformOps.openWithSystem(path);
+      case AppAction.batchConvert:
+        // 有标记项就转换全部标记项，否则只转换当前图片
+        final paths = marks.count > 0
+            ? marks.all.toList()
+            : [if (folder.currentPath != null) folder.currentPath!];
+        if (paths.isEmpty) {
+          showToast(lt("没有可转换的图片"));
+        } else if (!await PlatformOps.launchBatch(paths)) {
+          showToast(lt("启动批量转换失败"));
+        }
 
       case AppAction.rotateCW:
         tr.quarter = (tr.quarter + 1) % 4;

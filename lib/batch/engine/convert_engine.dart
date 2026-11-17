@@ -57,6 +57,9 @@ class ConvertResult {
   String? taken;
   int decodeMs = 0, encodeMs = 0;
 
+  /// 成功但需要提醒的情况（如边长小于对齐倍数）
+  String? warning;
+
   /// 摆正后的源图上，裁切框的归一化位置 (x, y, w, h)
   List<double>? cropRect;
 
@@ -88,6 +91,7 @@ class ConvertResult {
     'taken': taken,
     'decodeMs': decodeMs,
     'encodeMs': encodeMs,
+    'warning': warning,
     'cropRect': cropRect,
     'srcPreview': _pixMsg(srcPreview),
     'outPreview': _pixMsg(outPreview),
@@ -115,6 +119,7 @@ class ConvertResult {
       ..taken = m['taken'] as String?
       ..decodeMs = m['decodeMs'] as int
       ..encodeMs = m['encodeMs'] as int
+      ..warning = m['warning'] as String?
       ..cropRect = (m['cropRect'] as List?)?.cast<double>()
       ..srcPreview = _pixFrom(m['srcPreview'])
       ..outPreview = _pixFrom(m['outPreview']);
@@ -264,9 +269,14 @@ class ConvertEngine {
     };
 
     // 2. 裁切（在摆正后的坐标里）
-    final rect = cropOverride != null
+    var rect = cropOverride != null
         ? _fromNormalized(cropOverride, px.width, px.height)
         : cropRectFor(p, px);
+    if (p.cropAlignActive) {
+      final base = rect ?? IRect(0, 0, px.width, px.height);
+      if (alignTooSmall(base.w, base.h, p.cropAlign)) r.warning = kAlignWarning;
+      rect = alignCropRect(base, p.cropAlign, p.anchor);
+    }
     if (rect != null && !rect.covers(px.width, px.height)) {
       r.cropRect = [
         rect.x / px.width,
@@ -293,6 +303,15 @@ class ConvertEngine {
     final (tw, th) = resizeTarget(p, px.width, px.height);
     if (tw != px.width || th != px.height) {
       px = _scale(px, tw, th, p.filter);
+    }
+    // 4.1 尺寸对齐：缩放后居中裁掉不足一个倍数的部分，不拉伸
+    if (p.resizeAlignActive) {
+      final n = p.resizeAlign;
+      if (alignTooSmall(px.width, px.height, n)) r.warning = kAlignWarning;
+      final aw = alignDown(px.width, n), ah = alignDown(px.height, n);
+      if (aw != px.width || ah != px.height) {
+        px = crop(px, _anchored(px.width, px.height, aw, ah, 4));
+      }
     }
     r.decodeMs = sw.elapsedMilliseconds;
     sw.reset();
@@ -371,7 +390,12 @@ class ConvertEngine {
 
     r.encodeMs = sw.elapsedMilliseconds;
     r.bytes = bytes;
-    if (p.keepIfLarger && bytes.length >= src.fileSize) r.keepOriginal = true;
+    if (p.keepIfLarger && bytes.length >= src.fileSize) {
+      // 开了对齐就是要指定尺寸，尺寸变了不能退回原图
+      final sizeLocked = p.cropAlignActive || p.resizeAlignActive;
+      final sameSize = px.width == r.srcW && px.height == r.srcH;
+      if (!sizeLocked || sameSize) r.keepOriginal = true;
+    }
     return r;
   }
 
@@ -580,6 +604,21 @@ IRect _anchored(int w, int h, int cw, int ch, int anchor) {
   return IRect(((w - cw) * fx).round(), ((h - ch) * fy).round(), cw, ch);
 }
 
+const kAlignWarning = '尺寸小于对齐倍数';
+
+/// 向下取整到 n 的倍数；本身不到 n 的保持原样（不能变成 0）
+int alignDown(int v, int n) => n <= 1 || v < n ? v : v - v % n;
+
+bool alignTooSmall(int w, int h, int n) => n > 1 && (w < n || h < n);
+
+/// 把裁切框宽高向下对齐，多余的部分按锚点从框内去掉
+IRect alignCropRect(IRect r, int n, int anchor) {
+  final aw = alignDown(r.w, n), ah = alignDown(r.h, n);
+  if (aw == r.w && ah == r.h) return r;
+  final a = _anchored(r.w, r.h, aw, ah, anchor);
+  return IRect(r.x + a.x, r.y + a.y, aw, ah);
+}
+
 (int, int) resizeTarget(ConvertPreset p, int w, int h) {
   double s;
   final v = p.resizeValue;
@@ -598,8 +637,17 @@ IRect _anchored(int w, int h, int cw, int ch, int anchor) {
       s = math.min(p.fitW / w, p.fitH / h);
     case ResizeMode.percent:
       s = v / 100;
+    case ResizeMode.pixels:
+      s = math.sqrt(p.megapixels * 1024 * 1024 / (w * h));
   }
   if (!s.isFinite || s <= 0) return (w, h);
   if (p.noUpscale && s > 1) s = 1;
+  if (p.resize == ResizeMode.pixels) {
+    // 向下取整，保证不超过目标像素数
+    return (
+      math.max(1, (w * s + 1e-6).floor()),
+      math.max(1, (h * s + 1e-6).floor()),
+    );
+  }
   return (math.max(1, (w * s).round()), math.max(1, (h * s).round()));
 }

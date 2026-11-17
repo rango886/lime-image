@@ -187,9 +187,8 @@ class StatusPanel extends StatelessWidget {
     if (entry == null) return const SizedBox.shrink();
 
     final radius = BorderRadius.circular(cfg.cornerRadius + 2);
-    final surface = (dark ? const Color(0xFF1A1C20) : Colors.white).withValues(
-      alpha: cfg.statusPanelOpacity,
-    );
+    final surface = (dark ? LimeNeutral.darkOverlay : LimeNeutral.lightOverlay)
+        .withValues(alpha: cfg.statusPanelOpacity);
 
     final progress = s.folder.count <= 1
         ? 1.0

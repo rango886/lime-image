@@ -72,6 +72,9 @@ class BatchState extends ChangeNotifier {
 
   final List<BatchItem> items = [];
   final Set<String> _known = {};
+  final Set<String> _directoryRoots = {};
+  final Set<String> _explicitFiles = {};
+  Future<void> _fileChanges = Future.value();
   int selected = -1;
   bool onlyFailed = false;
   bool recursive = true;
@@ -161,18 +164,31 @@ class BatchState extends ChangeNotifier {
   }
 
   Timer? _saveTimer;
+
+  /// 退出前调用：停掉进行中的任务，并把还在等延时的状态立即写盘。
+  Future<void> shutdown() async {
+    cancel();
+    if (_saveTimer?.isActive ?? false) {
+      _saveTimer!.cancel();
+      await store.writeState(_stateJson());
+    }
+  }
+
+  Map<String, dynamic> _stateJson() => {
+    'preset': preset.toJson(),
+    'presetName': presetName,
+    'recentDirs': recentDirs,
+    'recursive': recursive,
+    'collapsed': collapsed.toList(),
+    'previewMode': previewMode.name,
+  };
+
   void _persist() {
     _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 600), () {
-      store.writeState({
-        'preset': preset.toJson(),
-        'presetName': presetName,
-        'recentDirs': recentDirs,
-        'recursive': recursive,
-        'collapsed': collapsed.toList(),
-        'previewMode': previewMode.name,
-      });
-    });
+    _saveTimer = Timer(
+      const Duration(milliseconds: 600),
+      () => store.writeState(_stateJson()),
+    );
   }
 
   Future<void> _probeCaps() async {
@@ -210,14 +226,41 @@ class BatchState extends ChangeNotifier {
   // 文件列表
   // ---------------------------------------------------------------------------
 
-  Future<void> addPaths(List<String> paths) async {
+  // 文件夹扫描串行执行，避免开关快速切换或多进程连续加路径时互相穿插。
+  Future<void> _queueFileChange(Future<void> Function() action) {
+    final next = _fileChanges.then((_) async {
+      if (!_disposed) await action();
+    });
+    _fileChanges = next.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return next;
+  }
+
+  Future<void> addPaths(List<String> paths) {
+    final includeSubfolders = recursive;
+    return _queueFileChange(() => _addPaths(paths, includeSubfolders));
+  }
+
+  Future<void> _addPaths(List<String> paths, bool includeSubfolders) async {
     final before = items.length;
     for (final raw in paths) {
-      final path = p.normalize(raw);
+      // 右键盘符根目录空白处时命令行是 "C:\"，Windows 解析规则把 \" 当成转义引号，
+      // 进程拿到的是 C:"。这里还原成 C:\。
+      var fixed = raw.trim();
+      if (fixed.endsWith('"')) {
+        fixed = '${fixed.substring(0, fixed.length - 1)}${p.separator}';
+      }
+      if (fixed.isEmpty) continue;
+      final path = p.normalize(p.absolute(fixed));
       final type = await FileSystemEntity.type(path);
       if (type == FileSystemEntityType.directory) {
-        await _addDir(path);
+        // 即使当前没有图片也保留根目录，开启递归后仍能找到子目录里的图。
+        _directoryRoots.add(path);
+        await _addDir(path, includeSubfolders);
       } else if (type == FileSystemEntityType.file && isImageFile(path)) {
+        _explicitFiles.add(path.toLowerCase());
         await _addFile(path, null);
       }
     }
@@ -226,7 +269,7 @@ class BatchState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _addDir(String dir) async {
+  Future<void> _addDir(String dir, bool includeSubfolders) async {
     final files = <String>[];
     final skipName = preset.place == OutputPlace.subfolder
         ? preset.subfolder.trim()
@@ -237,7 +280,7 @@ class BatchState extends ChangeNotifier {
         await for (final e in d.list(followLinks: false)) {
           if (e is File && isImageFile(e.path)) {
             files.add(e.path);
-          } else if (e is Directory && recursive) {
+          } else if (e is Directory && includeSubfolders) {
             if (skipName != null &&
                 p.basename(e.path).toLowerCase() == skipName.toLowerCase()) {
               continue;
@@ -303,6 +346,7 @@ class BatchState extends ChangeNotifier {
     if (idx < 0) return;
     items.removeAt(idx);
     _known.remove(item.path.toLowerCase());
+    _explicitFiles.remove(item.path.toLowerCase());
     cropOverrides.remove(item.path);
     if (items.isEmpty) {
       selected = -1;
@@ -320,6 +364,8 @@ class BatchState extends ChangeNotifier {
     if (running) return;
     items.clear();
     _known.clear();
+    _directoryRoots.clear();
+    _explicitFiles.clear();
     cropOverrides.clear();
     selected = -1;
     summary = null;
@@ -349,10 +395,39 @@ class BatchState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setRecursive(bool v) {
+  Future<void> setRecursive(bool v) {
+    if (running || recursive == v) return Future.value();
     recursive = v;
     _persist();
     notifyListeners();
+    return _queueFileChange(() async {
+      final cur = current;
+      if (v) {
+        for (final dir in _directoryRoots.toList()) {
+          await _addDir(dir, true);
+        }
+      } else {
+        // 单独添加的图片、单独添加的子文件夹里的直属图片不受开关影响。
+        items.removeWhere((item) {
+          if (item.root == null ||
+              _explicitFiles.contains(item.path.toLowerCase()) ||
+              _directoryRoots.any(
+                (dir) => p.equals(p.dirname(item.path), dir),
+              )) {
+            return false;
+          }
+          _known.remove(item.path.toLowerCase());
+          cropOverrides.remove(item.path);
+          return true;
+        });
+      }
+      selected = cur == null ? -1 : items.indexOf(cur);
+      if (selected < 0) {
+        _clearPreview();
+        if (items.isNotEmpty) select(0);
+      }
+      notifyListeners();
+    });
   }
 
   void sortBy(int Function(BatchItem, BatchItem) cmp) {
@@ -610,6 +685,8 @@ class BatchState extends ChangeNotifier {
 
   Future<RunSummary?> start() async {
     if (running) return null;
+    await _fileChanges;
+    if (running || _disposed) return null;
     final list = items.where((i) => i.checked).toList();
     if (list.isEmpty) return null;
     running = true;
@@ -658,6 +735,8 @@ class BatchState extends ChangeNotifier {
             )
             .then((r) async {
               if (r.skipped == '已取消') return;
+              // 取消后已经算完、但还没写盘的结果也丢掉，保持“未处理”
+              if (_cancelled) return;
               item.status = ItemStatus.running;
               await _finish(item, r, snapshot, seq, claimed, sum, now);
               runDone++;
@@ -771,7 +850,7 @@ class BatchState extends ChangeNotifier {
       item.outPath = target;
       item.outSize = await out.length();
       item.status = ItemStatus.done;
-      item.message = r.keepOriginal ? '保留原图' : null;
+      item.message = r.keepOriginal ? '保留原图' : r.warning;
       sum.done++;
       sum.outBytes += item.outSize;
       sum.lastDir = dir;
@@ -786,8 +865,17 @@ class BatchState extends ChangeNotifier {
 
   bool get cancelRequested => _cancelled;
 
+  bool _disposed = false;
+
+  /// 后台探测 / 预览 / 转换可能在窗口关掉之后才回来
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
   @override
   void dispose() {
+    _disposed = true;
     _saveTimer?.cancel();
     _previewTimer?.cancel();
     _pool?.dispose();
