@@ -1327,30 +1327,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ---------------------------------------------------------------------------
-  Widget _header(String text) => Padding(
-    padding: const EdgeInsets.only(top: 6, bottom: 10),
-    child: Row(
-      children: [
-        Container(
-          width: 3,
-          height: 13,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(text, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Divider(
-            height: 1,
-            color: Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-      ],
-    ),
-  );
+  Widget _header(String text) => SectionHeader(text);
 
   Widget _switch(
     String label,
@@ -1359,49 +1336,13 @@ class _SettingsPageState extends State<SettingsPage> {
     String? hint,
   }) => _row(
     label,
-    Align(
-      alignment: Alignment.centerLeft,
-      child: SizedBox(
-        width: 40,
-        height: 24,
-        child: FittedBox(
-          fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
-          child: Switch(value: value, onChanged: onChanged),
-        ),
-      ),
-    ),
+    LimeSwitch(value: value, onChanged: onChanged),
     hint: hint,
   );
 
   /// 统一的一行：左侧标题定宽，右侧控件；说明放在控件下方，避免挤压标题。
-  Widget _row(String label, Widget control, {String? hint}) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 210,
-              child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-            ),
-            Expanded(child: control),
-          ],
-        ),
-        if (hint != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 210, top: 3, bottom: 3),
-            child: Text(
-              hint,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-      ],
-    ),
-  );
+  Widget _row(String label, Widget control, {String? hint}) =>
+      SettingRow(label, control, hint: hint);
 
   Widget _slider(
     String label,

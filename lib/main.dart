@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'batch/batch_main.dart';
 import 'core/platform_ops.dart';
 import 'models/enums.dart';
 import 'models/settings.dart';
@@ -25,6 +26,9 @@ void _mark(String stage) {
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (args.isNotEmpty && args.first == '--batch') {
+    return runBatchMode(args.sublist(1));
+  }
   PlatformOps.initChannel();
   _mark('binding ready');
 
