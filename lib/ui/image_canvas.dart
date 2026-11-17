@@ -68,7 +68,7 @@ class ImagePainter extends CustomPainter {
     canvas.translate(-cw / 2, -ch / 2);
 
     void draw(DecodedImage img, double x, double w, double h) {
-      final frame = img.frames[frameIndex % img.frameCount].image;
+      final frame = img.frameAt(frameIndex).image;
       final src = Rect.fromLTWH(
         0,
         0,

@@ -705,14 +705,24 @@ class ViewerState extends ChangeNotifier {
   void _scheduleFrame() {
     final img = image;
     if (img == null || !img.animated || !animPlaying) return;
-    final d = img.frames[frameIndex % img.frameCount].duration;
+    final d = img.frameAt(frameIndex).duration;
     final ms = math.max(10, (d.inMilliseconds / settings.animSpeed).round());
-    _animTimer = Timer(Duration(milliseconds: ms), () {
-      frameIndex = (frameIndex + 1) % img.frameCount;
+    late final Timer t;
+    t = Timer(Duration(milliseconds: ms), () async {
+      final next = (frameIndex + 1) % img.frameCount;
+      // 流式动图：先把下一帧解出来再切换；全缓存的动图这里立即完成
+      final second = secondImage;
+      await Future.wait([
+        img.ensureFrame(next),
+        if (second != null && second.animated) second.ensureFrame(next),
+      ]);
+      if (_animTimer != t || closing || !animPlaying || image == null) return;
+      frameIndex = next % image!.frameCount;
       _bump();
       notifyListeners();
       _scheduleFrame();
     });
+    _animTimer = t;
   }
 
   void toggleAnimPlay() {
@@ -731,6 +741,15 @@ class ViewerState extends ChangeNotifier {
     _animTimer?.cancel();
     frameIndex = (frameIndex + delta) % img.frameCount;
     if (frameIndex < 0) frameIndex += img.frameCount;
+    final target = frameIndex;
+    if (img.streaming) {
+      img.ensureFrame(target).then((_) {
+        if (image == img && frameIndex == target) {
+          _bump();
+          notifyListeners();
+        }
+      });
+    }
     _bump();
     notifyListeners();
   }

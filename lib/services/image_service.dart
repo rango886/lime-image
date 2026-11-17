@@ -33,7 +33,15 @@ class DecodedImage {
     required this.fileBytes,
     required this.truncatedFrames,
     this.vector = false,
-  });
+    ui.Codec? stream,
+    ui.ImageDescriptor? streamDescriptor,
+    ui.ImmutableBuffer? streamBuffer,
+    int? totalFrames,
+  }) : _codec = stream,
+       _desc = streamDescriptor,
+       _buffer = streamBuffer,
+       _total = totalFrames ?? frames.length,
+       _codecNext = stream == null ? 0 : 1 % (totalFrames ?? frames.length);
 
   final String path;
   final int naturalWidth;
@@ -48,9 +56,84 @@ class DecodedImage {
   /// 所以 decodedWidth 可以超过 naturalWidth，放大时值得再栅格化一次。
   final bool vector;
 
-  bool get animated => frames.length > 1;
-  int get frameCount => frames.length;
+  bool get animated => _total > 1;
+  int get frameCount => _total;
   ui.Image get image => frames.first.image;
+
+  // ---------------------------------------------------------------------------
+  // 流式播放：帧数或内存超过缓存上限的长动图不再全部预解码，
+  // 而是留住解码器，播放到哪一帧就解到哪一帧（只保留当前帧 + 上一帧）。
+  // ---------------------------------------------------------------------------
+  final ui.Codec? _codec;
+  final ui.ImageDescriptor? _desc;
+  final ui.ImmutableBuffer? _buffer;
+  final int _total;
+
+  /// 解码器下一次 getNextFrame() 会吐出的帧号（解码器到尾会自动绕回 0）
+  int _codecNext;
+  int _curIndex = 0; // 当前可显示帧的帧号；0 且 _cur 为空时用 frames.first
+  AnimFrame? _cur;
+  AnimFrame? _prev; // 延迟一拍再释放，防止还没重建的 widget 画到已释放的图
+  Future<void> _queue = Future.value();
+
+  bool get streaming => _codec != null;
+
+  /// 取第 i 帧；流式模式下若该帧还没解出来，返回最近一帧
+  AnimFrame frameAt(int i) {
+    if (_codec == null) return frames[i % frames.length];
+    final t = i % _total;
+    if (_curIndex == t) return _cur ?? frames.first;
+    if (t == 0) return frames.first;
+    return _cur ?? frames.first;
+  }
+
+  /// 确保第 i 帧可用（非流式时立即完成）。调用会被串行化。
+  Future<void> ensureFrame(int i) {
+    if (_codec == null || _disposed) return Future.value();
+    final t = i % _total;
+    final f = _queue.then((_) => _advanceTo(t));
+    _queue = f.catchError((_) {});
+    return f;
+  }
+
+  Future<void> _advanceTo(int t) async {
+    final codec = _codec!;
+    if (_curIndex == t) return;
+    ui.Image? pending;
+    var pendingDuration = Duration.zero;
+    var pendingIndex = -1;
+    try {
+      // GIF 的帧之间有依赖，只能顺序往前解；跳着走就把中间帧解完扔掉
+      while (!_disposed && pendingIndex != t) {
+        final f = await codec.getNextFrame();
+        if (_disposed) {
+          f.image.dispose();
+          break;
+        }
+        pending?.dispose();
+        pending = f.image;
+        pendingDuration = f.duration;
+        pendingIndex = _codecNext;
+        _codecNext = (_codecNext + 1) % _total;
+      }
+    } catch (e) {
+      debugPrint('[lime image] 动图流式解码失败: $e');
+    }
+    if (pending == null) return;
+    if (_disposed) {
+      pending.dispose();
+      return;
+    }
+    _prev?.image.dispose();
+    _prev = _cur;
+    _cur = AnimFrame(
+      pending,
+      pendingDuration.inMilliseconds <= 10
+          ? const Duration(milliseconds: 100)
+          : pendingDuration,
+    );
+    _curIndex = pendingIndex;
+  }
 
   /// EXIF 旋转是否交换宽高
   bool get swapsAxes => orientation >= 5;
@@ -62,6 +145,8 @@ class DecodedImage {
     for (final f in frames) {
       total += f.image.width * f.image.height * 4;
     }
+    // 流式模式额外常驻当前帧 + 上一帧
+    if (_codec != null) total += 2 * image.width * image.height * 4;
     return total;
   }
 
@@ -74,6 +159,13 @@ class DecodedImage {
     for (final f in frames) {
       f.image.dispose();
     }
+    _cur?.image.dispose();
+    _prev?.image.dispose();
+    _cur = null;
+    _prev = null;
+    _codec?.dispose();
+    _desc?.dispose();
+    _buffer?.dispose();
   }
 }
 
@@ -473,6 +565,7 @@ class ImageService {
   }) async {
     ui.ImageDescriptor? desc;
     ui.Codec? codec;
+    var keepAlive = false; // 流式播放时解码器交给 DecodedImage 管理
     try {
       desc = await ui.ImageDescriptor.encoded(buffer);
       final natW = desc.width;
@@ -502,9 +595,36 @@ class ImageService {
       if (total <= 1) {
         final f = await codec.getNextFrame();
         frames.add(AnimFrame(f.image, f.duration));
+      } else if (total > maxFrames ||
+          targetW * targetH * 4 * total > _animBudget) {
+        // 长动图：全部预解码会爆内存，改成边播边解
+        final f = await codec.getNextFrame();
+        frames.add(
+          AnimFrame(
+            f.image,
+            f.duration.inMilliseconds <= 10
+                ? const Duration(milliseconds: 100)
+                : f.duration,
+          ),
+        );
+        keepAlive = true;
+        return DecodedImage(
+          path: path,
+          naturalWidth: natW,
+          naturalHeight: natH,
+          decodedWidth: frames.first.image.width,
+          frames: frames,
+          orientation: orientation,
+          fileBytes: fileBytes,
+          truncatedFrames: false,
+          stream: codec,
+          streamDescriptor: desc,
+          streamBuffer: buffer,
+          totalFrames: total,
+        );
       } else {
-        // 动图：整体像素预算 256MB，超了就只缓存前面的帧
-        const budget = 256 * 1024 * 1024;
+        // 动图：放得下就全部缓存，播放零开销
+        const budget = _animBudget;
         var used = 0;
         for (var i = 0; i < math.min(total, maxFrames); i++) {
           final f = await codec.getNextFrame();
@@ -538,11 +658,15 @@ class ImageService {
         truncatedFrames: truncated,
       );
     } finally {
-      codec?.dispose();
-      desc?.dispose();
-      buffer.dispose();
+      if (!keepAlive) {
+        codec?.dispose();
+        desc?.dispose();
+        buffer.dispose();
+      }
     }
   }
+
+  static const int _animBudget = 256 * 1024 * 1024;
 
   Future<int> _readOrientation(File file) async {
     try {

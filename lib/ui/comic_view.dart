@@ -400,9 +400,9 @@ class _PageImageState extends State<_PageImage> {
         ),
       );
     }
-    final frame = widget.animated ? s.frameIndex % image.frameCount : 0;
+    final frame = widget.animated ? s.frameIndex : 0;
     return RawImage(
-      image: image.frames[frame].image,
+      image: image.frameAt(frame).image,
       fit: BoxFit.fill,
       filterQuality: s.interacting ? FilterQuality.low : FilterQuality.medium,
     );
