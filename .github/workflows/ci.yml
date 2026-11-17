@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  # 锁定版本跟本地一致（3.48 起 material.dart 标记废弃，analyze 会挂）
+  FLUTTER_VERSION: '3.47.2'
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -14,6 +18,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed lib test tool
@@ -42,6 +47,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get
       - run: flutter build ${{ matrix.target }} --release

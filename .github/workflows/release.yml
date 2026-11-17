@@ -16,8 +16,8 @@ permissions:
 
 env:
   FLUTTER_CHANNEL: stable
-  # 想锁定版本就填具体版本号（例如 3.35.5），留空则用 channel 的最新版
-  FLUTTER_VERSION: ''
+  # 锁定版本跟本地一致（3.48 起 material.dart 标记废弃，analyze 会挂）；想跟最新版就留空
+  FLUTTER_VERSION: '3.47.2'
   APP_NAME: lime-image
 
 jobs:
