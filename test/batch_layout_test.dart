@@ -12,6 +12,8 @@ import 'package:limeimage/ui/batch/batch_page.dart';
 import 'package:limeimage/ui/batch/batch_preview.dart';
 import 'package:limeimage/ui/theme.dart';
 
+import 'helpers/fs_retry.dart';
+
 void main() {
   late Directory dir;
   late BatchState s;
@@ -44,7 +46,7 @@ void main() {
   tearDown(() async {
     s.dispose();
     images.dispose();
-    await dir.delete(recursive: true);
+    await deleteTempDir(dir);
   });
 
   Future<void> show(WidgetTester tester, Size size) async {

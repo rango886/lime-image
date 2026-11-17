@@ -8,6 +8,8 @@ import 'package:limeimage/batch/preset_store.dart';
 import 'package:limeimage/models/settings.dart';
 import 'package:path/path.dart' as p;
 
+import 'helpers/fs_retry.dart';
+
 /// BatchState 这一层：开始转换 / 取消 / 汇总 / 预设增删改导入导出 / 路径修正。
 /// 界面按钮最终都落到这里，这层对了，界面只剩“按钮有没有接上”。
 void main() {
@@ -39,7 +41,7 @@ void main() {
     }
     await File(p.join(imgs.path, 'note.txt')).writeAsString('x');
   });
-  tearDownAll(() => root.delete(recursive: true));
+  tearDownAll(() => deleteTempDir(root));
 
   Future<BatchState> newState() async {
     final store = await PresetStore.openAt(cfg.path);

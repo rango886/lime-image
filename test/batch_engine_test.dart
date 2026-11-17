@@ -9,6 +9,8 @@ import 'package:limeimage/batch/engine/pixels.dart';
 import 'package:limeimage/batch/naming.dart';
 import 'package:path/path.dart' as p;
 
+import 'helpers/fs_retry.dart';
+
 /// 小端 TIFF：IFD0 = Orientation + GPS 指针，GPS IFD 里一个 ASCII 标签
 Uint8List _exif({int orientation = 6}) {
   final b = ByteData(80);
@@ -164,7 +166,7 @@ void main() {
     setUpAll(() async {
       dir = await Directory.systemTemp.createTemp('lime-batch-');
     });
-    tearDownAll(() => dir.delete(recursive: true));
+    tearDownAll(() => deleteTempDir(dir));
 
     Future<String?> ffmpeg() => ConvertEngine().ffmpeg();
 

@@ -13,6 +13,8 @@ import 'package:limeimage/models/settings.dart';
 import 'package:limeimage/ui/batch/batch_preview.dart';
 import 'package:limeimage/ui/theme.dart';
 
+import 'helpers/fs_retry.dart';
+
 // 按需生成带系统字体的真实样式截图，不影响正常测试：
 // flutter test --dart-define=UPDATE_BATCH_SCREENSHOTS=true test/batch_info_style_test.dart
 const screenshots = bool.fromEnvironment('UPDATE_BATCH_SCREENSHOTS');
@@ -46,7 +48,7 @@ void main() {
 
   tearDown(() async {
     state.dispose();
-    await dir.delete(recursive: true);
+    await deleteTempDir(dir);
   });
 
   Future<void> loadFonts(WidgetTester tester) async {

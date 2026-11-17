@@ -11,6 +11,8 @@ import 'package:limeimage/state/viewer_state.dart';
 import 'package:limeimage/ui/title_bar.dart';
 import 'package:limeimage/ui/viewer_page.dart';
 
+import 'helpers/fs_retry.dart';
+
 class _Marks extends Fake implements MarksService {}
 
 void main() {
@@ -39,7 +41,7 @@ void main() {
     addTearDown(() async {
       state.dispose();
       service.dispose();
-      await dir.delete(recursive: true);
+      await deleteTempDir(dir);
     });
     await tester.pumpWidget(MaterialApp(home: ViewerPage(state: state)));
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);

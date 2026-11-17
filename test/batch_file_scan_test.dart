@@ -6,6 +6,8 @@ import 'package:limeimage/batch/preset_store.dart';
 import 'package:limeimage/models/settings.dart';
 import 'package:path/path.dart' as p;
 
+import 'helpers/fs_retry.dart';
+
 // 扫描只需要文件名，不依赖 ffmpeg、图片解码或预览 isolate。
 class _ScanState extends BatchState {
   _ScanState(PresetStore store) : super(settings: Settings(), store: store);
@@ -28,7 +30,7 @@ void main() {
 
   tearDown(() async {
     s.dispose();
-    await dir.delete(recursive: true);
+    await deleteTempDir(dir);
   });
 
   Future<String> image(String relative) async {

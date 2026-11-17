@@ -17,6 +17,8 @@ import 'package:limeimage/ui/viewer_page.dart';
 import 'package:limeimage/ui/language_page.dart';
 import 'package:limeimage/ui/settings_page.dart';
 
+import 'helpers/fs_retry.dart';
+
 class _Marks extends Fake implements MarksService {}
 
 class _OnboardingService extends ChangeNotifier implements SettingsService {
@@ -41,7 +43,7 @@ void main() {
   });
   tearDown(() async {
     AppStrings.language = AppLanguage.simplifiedChinese;
-    await directory.delete(recursive: true);
+    await deleteTempDir(directory);
   });
 
   test('fresh, legacy and unsupported language configurations', () {

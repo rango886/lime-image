@@ -7,6 +7,8 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:limeimage/services/metadata_service.dart';
 
+import 'helpers/fs_retry.dart';
+
 List<int> u32(int n, [Endian endian = Endian.big]) =>
     (ByteData(4)..setUint32(0, n, endian)).buffer.asUint8List();
 List<int> u16(int n, [Endian endian = Endian.big]) =>
@@ -97,7 +99,7 @@ void main() {
   setUp(
     () async => temp = await Directory.systemTemp.createTemp('lime-formats-'),
   );
-  tearDown(() async => temp.delete(recursive: true));
+  tearDown(() async => deleteTempDir(temp));
   Future<String> save(List<int> bytes) async {
     // Deliberately wrong extension verifies signature-based detection.
     final file = File('${temp.path}/${index++}.bin');

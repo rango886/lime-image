@@ -4,12 +4,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:limeimage/services/metadata_service.dart';
 
+import 'helpers/fs_retry.dart';
+
 void main() {
   late Directory temp;
   setUp(
     () async => temp = await Directory.systemTemp.createTemp('lime-metadata-'),
   );
-  tearDown(() async => temp.delete(recursive: true));
+  tearDown(() async => deleteTempDir(temp));
 
   Future<File> jpeg(List<List<int>> segments) async {
     final file = File('${temp.path}/test.jpg');
