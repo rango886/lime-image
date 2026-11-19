@@ -761,6 +761,7 @@ class ViewerState extends ChangeNotifier {
     if (folder.isEmpty) return;
     final step = mode == ViewMode.doublePage ? delta * 2 : delta;
     if (!folder.step(step)) return;
+    clearToast();
     // 锁定模式不是“原封不动”，而是重新应用锁定的缩放率 + 锚点，
     // 同分辨率结果完全一致，不同分辨率也不会飞到画面外。
     await reload();
@@ -771,6 +772,7 @@ class ViewerState extends ChangeNotifier {
   Future<void> navigateSingle(int delta) async {
     if (folder.isEmpty) return;
     if (!folder.step(delta)) return;
+    clearToast();
     await reload();
     if (mode == ViewMode.comic) _scrollToCurrentInComic();
     if (mode == ViewMode.longStrip) _resetStripScroll();
@@ -778,6 +780,7 @@ class ViewerState extends ChangeNotifier {
 
   Future<void> goToIndex(int i) async {
     if (!folder.goTo(i)) return;
+    clearToast();
     await reload();
     if (mode == ViewMode.comic) _scrollToCurrentInComic();
     if (mode == ViewMode.longStrip) _resetStripScroll();
@@ -806,6 +809,15 @@ class ViewerState extends ChangeNotifier {
       hudMessage = null;
       notifyListeners();
     });
+  }
+
+  void clearToast() {
+    _hudTimer?.cancel();
+    _hudTimer = null;
+    if (hudMessage != null) {
+      hudMessage = null;
+      notifyListeners();
+    }
   }
 
   // ---------------------------------------------------------------------------

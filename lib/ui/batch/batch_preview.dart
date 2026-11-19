@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -7,7 +8,8 @@ import 'package:flutter/services.dart';
 
 import '../../batch/batch_state.dart';
 import '../../batch/convert_preset.dart';
-import '../../batch/engine/convert_engine.dart' show kAlignWarning;
+import '../../batch/engine/convert_engine.dart'
+    show ConvertResult, kAlignWarning;
 import '../../core/platform_ops.dart';
 import '../../core/utils.dart';
 import '../../l10n/strings.dart';
@@ -525,18 +527,80 @@ class _CropPainter extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 /// 预览下方的属性对比和双行完整路径，不遮挡预览画布。
-class BatchInfoPanel extends StatelessWidget {
+class BatchInfoPanel extends StatefulWidget {
   const BatchInfoPanel({super.key, required this.state});
   final BatchState state;
 
+  @override
+  State<BatchInfoPanel> createState() => _BatchInfoPanelState();
+}
+
+class _BatchInfoPanelState extends State<BatchInfoPanel> {
   static const double _labelColWidth = 84;
+
+  ConvertResult? _lastResult;
+  String? _lastTargetPath;
+  int _lastOutBytes = 0;
+  Timer? _dimTimer;
+  bool _dimmed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncFromPreview();
+  }
+
+  @override
+  void didUpdateWidget(covariant BatchInfoPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncFromPreview();
+  }
+
+  @override
+  void dispose() {
+    _dimTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncFromPreview() {
+    final pv = widget.state.preview;
+    if (pv == null) {
+      _dimTimer?.cancel();
+      _dimTimer = null;
+      _lastResult = null;
+      _lastTargetPath = null;
+      _lastOutBytes = 0;
+      _dimmed = false;
+      return;
+    }
+    if (pv.result != null) {
+      _dimTimer?.cancel();
+      _dimTimer = null;
+      _lastResult = pv.result;
+      _lastTargetPath = pv.targetPath;
+      _lastOutBytes = pv.outBytes;
+      _dimmed = false;
+      return;
+    }
+    if (_lastResult != null && _dimTimer == null && !_dimmed) {
+      // 小图几十毫秒内就能算完，不闪白也不变灰；只有耗时较久时才温和淡化提示更新中。
+      _dimTimer = Timer(const Duration(milliseconds: 180), () {
+        if (!mounted) return;
+        if (widget.state.preview?.result == null) {
+          setState(() => _dimmed = true);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final pv = state.preview!;
-    final r = pv.result;
+    final pv = widget.state.preview!;
+    final r = pv.result ?? _lastResult;
+    final outBytes = pv.result != null ? pv.outBytes : _lastOutBytes;
+    final targetPath = pv.result != null ? pv.targetPath : _lastTargetPath;
     final labelSize = (theme.textTheme.labelSmall?.fontSize ?? 11) - 0.5;
     final valueSize = (theme.textTheme.bodySmall?.fontSize ?? 11.5) - 1.0;
     final label = theme.textTheme.labelSmall?.copyWith(
@@ -551,179 +615,190 @@ class BatchInfoPanel extends StatelessWidget {
     final before = value;
     final after = value;
 
-    Widget body;
-    if (r == null) {
-      body = const SizedBox(height: 52);
-    } else {
-      final ok = r.ok;
-      String meta(bool exif, bool gps) =>
-          exif ? (gps ? 'EXIF · GPS' : 'EXIF') : lt('无');
-      final keepGps =
-          state.preset.metadata == MetadataPolicy.keep && r.srcHasGps;
-      final outSize = r.keepOriginal ? r.srcSize : pv.outBytes;
-      final pct = r.srcSize == 0 ? 0 : (outSize - r.srcSize) * 100 / r.srcSize;
-      final deltaColor = pct <= 0 ? scheme.primary : scheme.error;
-      final alignBadge = ok && r.warning == kAlignWarning
-          ? Tooltip(
-              message: lt(kAlignWarning),
-              child: Icon(
-                Icons.warning_amber_rounded,
-                size: 14,
-                color: Colors.orange.shade700,
+    final ok = r?.ok ?? false;
+    String meta(bool exif, bool gps) =>
+        exif ? (gps ? 'EXIF · GPS' : 'EXIF') : lt('无');
+    final keepGps =
+        r != null &&
+        widget.state.preset.metadata == MetadataPolicy.keep &&
+        r.srcHasGps;
+    final outSize = r == null ? 0 : (r.keepOriginal ? r.srcSize : outBytes);
+    final pct = r == null || r.srcSize == 0
+        ? 0
+        : (outSize - r.srcSize) * 100 / r.srcSize;
+    final deltaColor = pct <= 0 ? scheme.primary : scheme.error;
+    final alignBadge = r != null && ok && r.warning == kAlignWarning
+        ? Tooltip(
+            message: lt(kAlignWarning),
+            child: Icon(
+              Icons.warning_amber_rounded,
+              size: 14,
+              color: Colors.orange.shade700,
+            ),
+          )
+        : null;
+    final sizeBadge = r != null && ok && r.srcSize > 0 && pct.round() != 0
+        ? Tooltip(
+            message:
+                '${pct < 0 ? lt('节省') : lt('增加')} '
+                '${formatBytes((outSize - r.srcSize).abs())}',
+            child: Container(
+              key: const ValueKey('batch-size-delta'),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: deltaColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(4),
               ),
-            )
-          : null;
-      final sizeBadge = ok && r.srcSize > 0 && pct.round() != 0
-          ? Tooltip(
-              message:
-                  '${pct < 0 ? lt('节省') : lt('增加')} '
-                  '${formatBytes((outSize - r.srcSize).abs())}',
-              child: Container(
-                key: const ValueKey('batch-size-delta'),
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(
-                  color: deltaColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${pct > 0 ? '+' : ''}${pct.round()}%',
-                  style: label?.copyWith(
-                    color: deltaColor,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Text(
+                '${pct > 0 ? '+' : ''}${pct.round()}%',
+                style: label?.copyWith(
+                  color: deltaColor,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            )
-          : null;
-      final fmtAfter = !ok
-          ? '—'
-          : r.keepOriginal
-          ? lt('保留原图')
-          : r.format.lossy && r.quality > 0
-          ? '${r.format.label} · ${r.quality}'
-          : r.format.label;
+            ),
+          )
+        : null;
+    final fmtAfter = r == null || !ok
+        ? '—'
+        : r.keepOriginal
+        ? lt('保留原图')
+        : r.format.lossy && r.quality > 0
+        ? '${r.format.label} · ${r.quality}'
+        : r.format.label;
 
-      final fields = [
-        (lt('格式'), r.srcFormat, fmtAfter),
-        (lt('尺寸'), '${r.srcW} × ${r.srcH}', ok ? '${r.outW} × ${r.outH}' : '—'),
-        (lt('大小'), formatBytes(r.srcSize), ok ? formatBytes(outSize) : '—'),
-        (
-          lt('透明'),
-          r.srcAlpha ? lt('有') : lt('无'),
-          ok ? (r.outAlpha ? lt('有') : lt('无')) : '—',
-        ),
-        (
-          lt('元数据'),
-          meta(r.srcHasExif, r.srcHasGps),
-          ok ? meta(r.exifKept, r.exifKept && keepGps) : '—',
-        ),
-      ];
-      Widget cell(
-        String text,
-        TextStyle? style, {
-        Widget? trailing,
-        double vertical = 3.5,
-      }) => Padding(
-        padding: EdgeInsets.symmetric(vertical: vertical, horizontal: 10),
-        child: Wrap(
-          spacing: 6,
-          runSpacing: 2,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Text(text, style: style),
-            ?trailing,
-          ],
-        ),
-      );
-      Widget rowLabel(bool result, {double horizontal = 14}) => Padding(
-        padding: EdgeInsets.symmetric(vertical: 3.5, horizontal: horizontal),
-        child: Text(result ? lt('转换后') : lt('转换前'), style: label),
-      );
-      body = LayoutBuilder(
-        builder: (context, c) {
-          if (c.maxWidth >= 560) {
-            // 中栏够宽时横排属性，用三行代替六行，给图片留出更多高度。
-            return Table(
-              columnWidths: const {
-                0: FixedColumnWidth(_labelColWidth),
-                1: FlexColumnWidth(1.05),
-                2: FlexColumnWidth(1.25),
-                3: FlexColumnWidth(1.45),
-                4: FlexColumnWidth(1.0),
-                5: FlexColumnWidth(1.05),
-              },
-              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-              children: [
-                TableRow(
-                  children: [
-                    const SizedBox.shrink(),
-                    for (final f in fields) cell(f.$1, label, vertical: 3.5),
-                  ],
-                ),
-                TableRow(
-                  children: [
-                    rowLabel(false),
-                    for (final f in fields) cell(f.$2, before),
-                  ],
-                ),
-                TableRow(
-                  children: [
-                    rowLabel(true),
-                    for (var i = 0; i < fields.length; i++)
-                      cell(
-                        fields[i].$3,
-                        after,
-                        trailing: i == 2
-                            ? sizeBadge
-                            : i == 1
-                            ? alignBadge
-                            : null,
-                      ),
-                  ],
-                ),
-              ],
-            );
-          }
+    final fields = r == null
+        ? [
+            (lt('格式'), '—', '—'),
+            (lt('尺寸'), '—', '—'),
+            (lt('大小'), '—', '—'),
+            (lt('透明'), '—', '—'),
+            (lt('元数据'), '—', '—'),
+          ]
+        : [
+            (lt('格式'), r.srcFormat, fmtAfter),
+            (
+              lt('尺寸'),
+              '${r.srcW} × ${r.srcH}',
+              ok ? '${r.outW} × ${r.outH}' : '—',
+            ),
+            (lt('大小'), formatBytes(r.srcSize), ok ? formatBytes(outSize) : '—'),
+            (
+              lt('透明'),
+              r.srcAlpha ? lt('有') : lt('无'),
+              ok ? (r.outAlpha ? lt('有') : lt('无')) : '—',
+            ),
+            (
+              lt('元数据'),
+              meta(r.srcHasExif, r.srcHasGps),
+              ok ? meta(r.exifKept, r.exifKept && keepGps) : '—',
+            ),
+          ];
+    Widget cell(
+      String text,
+      TextStyle? style, {
+      Widget? trailing,
+      double vertical = 3.5,
+    }) => Padding(
+      padding: EdgeInsets.symmetric(vertical: vertical, horizontal: 10),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 2,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(text, style: style),
+          ?trailing,
+        ],
+      ),
+    );
+    Widget rowLabel(bool result, {double horizontal = 14}) => Padding(
+      padding: EdgeInsets.symmetric(vertical: 3.5, horizontal: horizontal),
+      child: Text(result ? lt('转换后') : lt('转换前'), style: label),
+    );
+    final body = LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth >= 560) {
+          // 中栏够宽时横排属性，用三行代替六行，给图片留出更多高度。
           return Table(
             columnWidths: const {
               0: FixedColumnWidth(_labelColWidth),
-              1: FlexColumnWidth(),
-              2: FlexColumnWidth(),
+              1: FlexColumnWidth(1.05),
+              2: FlexColumnWidth(1.25),
+              3: FlexColumnWidth(1.45),
+              4: FlexColumnWidth(1.0),
+              5: FlexColumnWidth(1.05),
             },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
               TableRow(
                 children: [
                   const SizedBox.shrink(),
-                  rowLabel(false, horizontal: 10),
-                  rowLabel(true, horizontal: 10),
+                  for (final f in fields) cell(f.$1, label, vertical: 3.5),
                 ],
               ),
-              for (var i = 0; i < fields.length; i++)
-                TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 3.5, 8, 3.5),
-                      child: Text(fields[i].$1, style: label),
-                    ),
-                    cell(fields[i].$2, before, vertical: 3.5),
+              TableRow(
+                children: [
+                  rowLabel(false),
+                  for (final f in fields) cell(f.$2, before),
+                ],
+              ),
+              TableRow(
+                children: [
+                  rowLabel(true),
+                  for (var i = 0; i < fields.length; i++)
                     cell(
                       fields[i].$3,
                       after,
-                      vertical: 3.5,
                       trailing: i == 2
                           ? sizeBadge
                           : i == 1
                           ? alignBadge
                           : null,
                     ),
-                  ],
-                ),
+                ],
+              ),
             ],
           );
-        },
-      );
-    }
+        }
+        return Table(
+          columnWidths: const {
+            0: FixedColumnWidth(_labelColWidth),
+            1: FlexColumnWidth(),
+            2: FlexColumnWidth(),
+          },
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+          children: [
+            TableRow(
+              children: [
+                const SizedBox.shrink(),
+                rowLabel(false, horizontal: 10),
+                rowLabel(true, horizontal: 10),
+              ],
+            ),
+            for (var i = 0; i < fields.length; i++)
+              TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 3.5, 8, 3.5),
+                    child: Text(fields[i].$1, style: label),
+                  ),
+                  cell(fields[i].$2, before, vertical: 3.5),
+                  cell(
+                    fields[i].$3,
+                    after,
+                    vertical: 3.5,
+                    trailing: i == 2
+                        ? sizeBadge
+                        : i == 1
+                        ? alignBadge
+                        : null,
+                  ),
+                ],
+              ),
+          ],
+        );
+      },
+    );
 
     return Container(
       width: double.infinity,
@@ -740,8 +815,11 @@ class BatchInfoPanel extends StatelessWidget {
             key: const ValueKey('batch-comparison-card'),
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (pv.loading) const LinearProgressIndicator(minHeight: 2),
-              body,
+              AnimatedOpacity(
+                opacity: _dimmed ? 0.55 : 1.0,
+                duration: const Duration(milliseconds: 150),
+                child: body,
+              ),
               const SizedBox(height: 2),
               _InfoPathRow(
                 path: pv.path,
@@ -752,7 +830,7 @@ class BatchInfoPanel extends StatelessWidget {
                 valueSize: valueSize - 1.0,
               ),
               _InfoPathRow(
-                path: pv.targetPath,
+                path: targetPath,
                 label: lt('输出路径'),
                 textKey: const ValueKey('batch-target-path'),
                 labelWidth: _labelColWidth,
@@ -761,11 +839,11 @@ class BatchInfoPanel extends StatelessWidget {
               ),
             ],
           ),
-          if (r?.error != null) ...[
+          if (pv.result?.error != null) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 4, 14, 6),
               child: Text(
-                lt(r!.error!),
+                lt(pv.result!.error!),
                 style: label?.copyWith(color: scheme.error),
               ),
             ),

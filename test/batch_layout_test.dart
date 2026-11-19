@@ -240,4 +240,70 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 400));
   });
+
+  testWidgets('info panel keeps steady height and avoids flashing on switch', (
+    tester,
+  ) async {
+    Future<void> pumpPage() => tester.pumpWidget(
+      MaterialApp(
+        theme: LimeTheme.build(Brightness.light, 0xff8bc34a),
+        home: Material(
+          child: BatchPage(state: s, images: images, settings: settings),
+        ),
+      ),
+    );
+
+    await show(tester, const Size(1320, 840));
+    final info = find.byType(BatchInfoPanel);
+    final loadedHeight = tester.getSize(info).height;
+
+    // 切换到新图片时的中间状态：loading = true 且 result = null
+    s.preview = PreviewData(sourcePath)..loading = true;
+    await pumpPage();
+
+    expect(tester.getSize(info).height, loadedHeight);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(
+      find.descendant(of: info, matching: find.text('4000 × 3000')),
+      findsOneWidget,
+    );
+
+    // 超过 180ms 仍未完成时，温和淡化；拿到新结果后恢复不透明并更新数值
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find.descendant(of: info, matching: find.byType(AnimatedOpacity)),
+          )
+          .opacity,
+      0.55,
+    );
+
+    s.preview = PreviewData(sourcePath)
+      ..loading = false
+      ..targetPath = targetPath
+      ..result = (ConvertResult()
+        ..srcFormat = 'JPEG'
+        ..srcW = 1920
+        ..srcH = 1080
+        ..outW = 960
+        ..outH = 540
+        ..srcSize = 654321);
+    await pumpPage();
+    expect(
+      tester
+          .widget<AnimatedOpacity>(
+            find.descendant(of: info, matching: find.byType(AnimatedOpacity)),
+          )
+          .opacity,
+      1.0,
+    );
+    expect(
+      find.descendant(of: info, matching: find.text('1920 × 1080')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 400));
+  });
 }

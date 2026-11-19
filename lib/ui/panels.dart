@@ -308,10 +308,17 @@ class GridOverview extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(5),
-          child: Thumb(
-            state: s,
-            path: e.path,
-            size: s.settings.thumbSize * 1.5,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Thumb(state: s, path: e.path, size: s.settings.thumbSize * 1.5),
+              if (s.marks.isMarked(e.path))
+                const Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Icon(Icons.star, size: 16, color: Colors.amber),
+                ),
+            ],
           ),
         ),
       ),
@@ -320,16 +327,37 @@ class GridOverview extends StatelessWidget {
 }
 
 /// 中间浮层提示
-class Hud extends StatelessWidget {
+class Hud extends StatefulWidget {
   const Hud({super.key, required this.message});
   final String? message;
 
   @override
+  State<Hud> createState() => _HudState();
+}
+
+class _HudState extends State<Hud> {
+  String _lastMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.message != null) _lastMessage = widget.message!;
+  }
+
+  @override
+  void didUpdateWidget(covariant Hud oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.message != null) _lastMessage = widget.message!;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final visible = widget.message != null;
+    final text = widget.message ?? _lastMessage;
     return IgnorePointer(
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 140),
-        opacity: message == null ? 0 : 1,
+        opacity: visible ? 1 : 0,
         child: Align(
           alignment: const Alignment(0, 0.82),
           child: Container(
@@ -339,7 +367,7 @@ class Hud extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              message ?? '',
+              text,
               style: const TextStyle(color: Colors.white, fontSize: 12.5),
             ),
           ),

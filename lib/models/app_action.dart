@@ -57,10 +57,10 @@ enum AppAction {
   sortSizeDesc('按大小逆序', ActionGroup.sort, ['shift+s']),
   sortRandom('随机顺序', ActionGroup.sort, ['shift+z']),
 
-  openFile('打开图片…', ActionGroup.file, ['ctrl+o']),
-  openFolder('打开文件夹…', ActionGroup.file, ['ctrl+shift+o']),
+  openFile('打开图片', ActionGroup.file, ['ctrl+o']),
+  openFolder('打开文件夹', ActionGroup.file, ['ctrl+shift+o']),
   revealInFolder('打开所在文件夹', ActionGroup.file, ['l']),
-  toggleMark('标记 / 取消标记', ActionGroup.file, ['x']),
+  toggleMark('标记', ActionGroup.file, ['x']),
   showMarked('只浏览标记项', ActionGroup.file, ['shift+x']),
   toggleFlatten('文件夹平铺（含子文件夹）', ActionGroup.file, ['f']),
   copyMarked('复制标记项到…', ActionGroup.file, []),
@@ -71,7 +71,7 @@ enum AppAction {
   copyPath('复制路径', ActionGroup.file, ['ctrl+shift+c']),
   pasteOpen('从剪贴板打开', ActionGroup.file, ['ctrl+v']),
   openWithSystem('用默认程序打开', ActionGroup.file, ['ctrl+enter']),
-  batchConvert('批量转换图片', ActionGroup.file, []),
+  batchConvert('批量转换图片', ActionGroup.file, ['e']),
 
   rotateCW('顺时针旋转 90°', ActionGroup.image, ['r']),
   rotateCCW('逆时针旋转 90°', ActionGroup.image, ['shift+r']),
